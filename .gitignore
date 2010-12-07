@@ -1,0 +1,8 @@
+.DS_Store
+distfiles
+distfiles/*
+logs
+logs/*
+overlay
+overlay/*
+
