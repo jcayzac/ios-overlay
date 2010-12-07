@@ -1,0 +1,156 @@
+#!/bin/bash
+
+# Push all the command line arguments to the environment
+declare IOS_OVERLAY=1 $@
+
+CURRENT_DIR=$(pwd)
+SELF="${CURRENT_DIR}/$0"
+PACKAGE_DIR=${SELF%/*}
+PACKAGE_NAME=${PACKAGE_DIR##*/}
+PACKAGE_WITH_VERSION="${PACKAGE_NAME}-$VERSION"
+LOG_BASE="${IOS_OVERLAY_PATH}/logs/build/${PACKAGE_NAME}"
+DOWNLOAD_DIR="${IOS_OVERLAY_PATH}/distfiles"
+DOWNLOAD_LOG="${LOG_BASE}/download.txt"
+DOWNLOAD_LOCATION="${DOWNLOAD_DIR}/${ARCHIVE_FILENAME}"
+UNCOMPRESS_LOG="${LOG_BASE}/uncompress.txt"
+BUILD_ROOT="${TMPDIR}/ios-overlay/${PACKAGE_WITH_VERSION}"
+BUILD_LOG="${LOG_BASE}/build.txt"
+
+function restore_current_dir() {
+	cd "${CURRENT_DIR}"
+}
+
+function check_status_fail() {
+	if [ $? != 0 ]
+	then
+		echo -e $@
+		restore_current_dir
+		exit 1
+	fi
+}
+
+function download_file() {
+	wget -ct0 "$DOWNLOAD_URL" -O "${DOWNLOAD_LOCATION}"
+}
+
+function uncompress() {
+	mkdir -p "${BUILD_ROOT}"
+	tar -xvpjC "${BUILD_ROOT}" --strip-components 1 -f "${DOWNLOAD_LOCATION}"
+}
+
+mkdir -p "${DOWNLOAD_DIR}"
+mkdir -p "${LOG_BASE}"
+
+if [ -z "$SDK" ]
+then
+	SDK=$( find -s /Developer/Platforms/iPhoneOS.platform/Developer/SDKs -mindepth 1 -maxdepth 1 | tail -n 1 )
+	SDK=${SDK##*/iPhoneOS}
+	SDK=${SDK%*.sdk}
+fi
+
+IOS_DEVICE_PLATFORM="/Developer/Platforms/iPhoneOS.platform/Developer"
+IOS_SIMULATOR_PLATFORM="/Developer/Platforms/iPhoneSimulator.platform/Developer"
+
+IOS_DEVICE_SDK="${IOS_DEVICE_PLATFORM}/SDKs/iPhoneOS${SDK}.sdk"
+IOS_SIMULATOR_SDK="${IOS_SIMULATOR_PLATFORM}/SDKs/iPhoneSimulator${SDK}.sdk"
+
+IOS_DEVICE_PREFIX="${IOS_OVERLAY_PATH}/overlay${IOS_DEVICE_SDK}/usr"
+IOS_SIMULATOR_PREFIX="${IOS_OVERLAY_PATH}/overlay${IOS_SIMULATOR_SDK}/usr"
+
+mkdir -p "${IOS_DEVICE_PREFIX}"
+mkdir -p "${IOS_SIMULATOR_PREFIX}"
+
+if [ -z "$CC" ]
+then
+	CC="/usr/bin/gcc"
+fi
+
+if [ -z "$CXX" ]
+then
+	CXX="/usr/bin/g++"
+fi
+
+if [ -z "$CPP" ]
+then
+	CPP="/usr/bin/cpp"
+fi
+
+if [ -z "$LD" ]
+then
+	LD="/usr/bin/ld"
+fi
+
+if [ -z "$AR" ]
+then
+	AR="/usr/bin/ar"
+fi
+
+
+IOS_DEVICE_CC="${IOS_DEVICE_PLATFORM}${CC}"
+IOS_DEVICE_CXX="${IOS_DEVICE_PLATFORM}${CXX}"
+IOS_DEVICE_CPP="${IOS_DEVICE_PLATFORM}${CPP}"
+IOS_DEVICE_LD="${IOS_DEVICE_PLATFORM}${LD}"
+IOS_DEVICE_AR="${IOS_DEVICE_PLATFORM}${AR}"
+
+IOS_SIMULATOR_CC="${IOS_SIMULATOR_PLATFORM}${CC}"
+IOS_SIMULATOR_CXX="${IOS_SIMULATOR_PLATFORM}${CXX}"
+IOS_SIMULATOR_CPP="${IOS_SIMULATOR_PLATFORM}${CPP}"
+IOS_SIMULATOR_LD="${IOS_SIMULATOR_PLATFORM}${LD}"
+IOS_SIMULATOR_AR="${IOS_SIMULATOR_PLATFORM}${AR}"
+
+unset CC CXX CPP LD AR
+
+echo "* Installing [${PACKAGE_WITH_VERSION}] for [iOS ${SDK}]…"
+
+echo "    Downloading [${DOWNLOAD_URL}]…"
+if [ ! -r "${DOWNLOAD_LOCATION}" ]
+then
+	rm -f "${DOWNLOAD_LOCATION}" 2>/dev/null
+	if type custom_download_file >/dev/null 2>&1
+	then
+		custom_download_file 2>&1 | tee "${DOWNLOAD_LOG}" >/dev/null
+	else
+		download_file 2>&1 | tee "${DOWNLOAD_LOG}" >/dev/null
+	fi
+	check_status_fail "### Failed to download ${DOWNLOAD_URL}, exiting…\nSee log at ${DOWNLOAD_LOG}"
+fi
+
+echo "    Uncompressing [${ARCHIVE_FILENAME}] into [${BUILD_ROOT}]…"
+rm -rf "${BUILD_ROOT}" 2>/dev/null
+mkdir -p "${BUILD_ROOT}" 2>/dev/null
+if type custom_uncompress >/dev/null 2>&1
+then
+	custom_uncompress 2>&1 | tee "${UNCOMPRESS_LOG}" >/dev/null
+	
+else
+	uncompress 2>&1 | tee "${UNCOMPRESS_LOG}" >/dev/null
+fi
+check_status_fail "### Failed to uncompress ${DOWNLOAD_LOCATION}, exiting…\nSee log at ${UNCOMPRESS_LOG}"
+
+echo "    Patching [${BUILD_ROOT}]…"
+if type custom_uncompress >/dev/null 2>&1
+then
+	custom_patch
+else
+	if [ -r "${PACKAGE_DIR}/${PACKAGE_WITH_VERSION}.patch" ]
+	then
+		patch -d "${BUILD_ROOT}" -p1 < "${PACKAGE_DIR}/${PACKAGE_WITH_VERSION}.patch"
+	fi
+fi
+check_status_fail "### Failed to apply patch on [${BUILD_ROOT}], exiting…"
+
+echo "    Building…"
+cd "${BUILD_ROOT}"
+
+if type custom_build >/dev/null 2>&1
+then
+	custom_build 2>&1 | tee "${BUILD_LOG}"
+	check_status_fail "### Failed to build ${PACKAGE_WITH_VERSION}, exiting…\nSee log at ${BUILD_LOG}"
+else
+	false
+	check_status_fail "### No custom_build() function defined in [${SELF}], exiting…"
+fi
+
+restore_current_dir
+echo "    All done!"
+
