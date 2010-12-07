@@ -29,14 +29,8 @@ To be documented
 
 ##Using the overlay in an Xcode project
 
-* Add the following in your *Header Search Paths* setting (curly brackets and parenthesis are important):
-
-<code>${IOS_OVERLAY_PATH}/overlay/$(SDK_DIR)/usr/include</code>
-
-* Add the following in your *Library Search Paths* setting (curly brackets and parenthesis are important):
-
-<code>${IOS_OVERLAY_PATH}/overlay/$(SDK_DIR)/usr/lib</code>
-
+* Add the following in your *Header Search Paths* setting (curly brackets and parenthesis are important): <code>${IOS_OVERLAY_PATH}/overlay/$(SDK_DIR)/usr/include</code>
+* Add any of the static libraries from <code>${IOS_OVERLAY_PATH}/overlay/$(SDK_DIR)/usr/lib</code> to your project.
 * Build, run, enjoy!
 
 ##Updating the overlay
