@@ -12,11 +12,12 @@ function custom_build() {
 		CC="${IOS_DEVICE_CC}" \
 		AR="${IOS_DEVICE_AR}" \
 		RANLIB="${IOS_DEVICE_RANLIB}" \
-		CFLAGS="${IOS_DEVICE_CFLAGS} -O3 -D_FILE_OFFSET_BITS=64" \
+		CFLAGS="${IOS_DEVICE_PERFORMANCE_CFLAGS} -D_FILE_OFFSET_BITS=64" \
 		LDFLAGS="${IOS_DEVICE_LDFLAGS}" \
 	&& \
 	mv "${BUILD_ROOT}/libbz2.a" "${IOS_DEVICE_PREFIX}/lib/" && \
 	make clean && \
+	cp "${BUILD_ROOT}/bzlib.h" "${IOS_DEVICE_PREFIX}/include/" && \
 	make libbz2.a \
 		PREFIX="${IOS_SIMULATOR_PREFIX}" \
 		CC="${IOS_SIMULATOR_CC}" \
