@@ -39,6 +39,11 @@ To be documented
 
 * Build, run, enjoy!
 
+##Updating the overlay
+
+    cd ${IOS_OVERLAY_PATH}
+    git pull
+
 ##License
 Short version: it's BSD.
 
