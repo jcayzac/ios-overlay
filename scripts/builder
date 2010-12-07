@@ -4,8 +4,16 @@
 declare IOS_OVERLAY=1 $@
 
 CURRENT_DIR=$(pwd)
-SELF="${CURRENT_DIR}/$0"
-PACKAGE_DIR=${SELF%/*}
+SELF="$0"
+PACKAGE_DIR=${0%/*}
+if [ -z "$PACKAGE_DIR" ]
+then
+	PACKAGE_DIR="."
+fi
+cd "${PACKAGE_DIR}"
+PACKAGE_DIR=$(pwd)
+SELF="${PACKAGE_DIR}/${SELF##*/}"
+cd "${CURRENT_DIR}"
 PACKAGE_NAME=${PACKAGE_DIR##*/}
 PACKAGE_WITH_VERSION="${PACKAGE_NAME}-$VERSION"
 LOG_BASE="${IOS_OVERLAY_PATH}/logs/build/${PACKAGE_NAME}"
@@ -152,15 +160,10 @@ else
 fi
 check_status_fail "### Failed to uncompress ${DOWNLOAD_LOCATION}, exiting…\nSee log at ${UNCOMPRESS_LOG}"
 
-echo "    Patching [${BUILD_ROOT}]…"
-if type custom_uncompress >/dev/null 2>&1
+if [ -r "${PACKAGE_DIR}/${PACKAGE_WITH_VERSION}.patch" ]
 then
-	custom_patch
-else
-	if [ -r "${PACKAGE_DIR}/${PACKAGE_WITH_VERSION}.patch" ]
-	then
-		patch -d "${BUILD_ROOT}" -p1 < "${PACKAGE_DIR}/${PACKAGE_WITH_VERSION}.patch"
-	fi
+	echo "    Patching [${BUILD_ROOT}]…"
+	patch -d "${BUILD_ROOT}" -p1 -i "${PACKAGE_DIR}/${PACKAGE_WITH_VERSION}.patch"
 fi
 check_status_fail "### Failed to apply patch on [${BUILD_ROOT}], exiting…"
 
