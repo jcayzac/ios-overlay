@@ -35,7 +35,18 @@ function download_file() {
 
 function uncompress() {
 	mkdir -p "${BUILD_ROOT}"
-	tar -xvpjC "${BUILD_ROOT}" --strip-components 1 -f "${DOWNLOAD_LOCATION}"
+	case "${DOWNLOAD_LOCATION}" in
+		*.tar.gz)
+			tar -xvpzC "${BUILD_ROOT}" --strip-components 1 -f "${DOWNLOAD_LOCATION}"
+			;;
+		*.tar.bz2)
+			tar -xvpjC "${BUILD_ROOT}" --strip-components 1 -f "${DOWNLOAD_LOCATION}"
+			;;
+		*)
+			false
+			check_status_fail "### Failed to uncompress [${DOWNLOAD_LOCATION}] (unknown archive type), exiting…"
+			;;
+	esac
 }
 
 mkdir -p "${DOWNLOAD_DIR}"
@@ -57,8 +68,8 @@ IOS_SIMULATOR_SDK="${IOS_SIMULATOR_PLATFORM}/SDKs/iPhoneSimulator${SDK}.sdk"
 IOS_DEVICE_PREFIX="${IOS_OVERLAY_PATH}/overlay${IOS_DEVICE_SDK}/usr"
 IOS_SIMULATOR_PREFIX="${IOS_OVERLAY_PATH}/overlay${IOS_SIMULATOR_SDK}/usr"
 
-mkdir -p "${IOS_DEVICE_PREFIX}"
-mkdir -p "${IOS_SIMULATOR_PREFIX}"
+mkdir -p "${IOS_DEVICE_PREFIX}"/{include,lib}
+mkdir -p "${IOS_SIMULATOR_PREFIX}"/{include,lib}
 
 if [ -z "$CC" ]
 then
@@ -85,20 +96,26 @@ then
 	AR="/usr/bin/ar"
 fi
 
+if [ -z "$RANLIB" ]
+then
+	RANLIB="/usr/bin/ranlib"
+fi
 
 IOS_DEVICE_CC="${IOS_DEVICE_PLATFORM}${CC}"
 IOS_DEVICE_CXX="${IOS_DEVICE_PLATFORM}${CXX}"
 IOS_DEVICE_CPP="${IOS_DEVICE_PLATFORM}${CPP}"
 IOS_DEVICE_LD="${IOS_DEVICE_PLATFORM}${LD}"
 IOS_DEVICE_AR="${IOS_DEVICE_PLATFORM}${AR}"
+IOS_DEVICE_RANLIB="${IOS_DEVICE_PLATFORM}${RANLIB}"
 
 IOS_SIMULATOR_CC="${IOS_SIMULATOR_PLATFORM}${CC}"
 IOS_SIMULATOR_CXX="${IOS_SIMULATOR_PLATFORM}${CXX}"
 IOS_SIMULATOR_CPP="${IOS_SIMULATOR_PLATFORM}${CPP}"
 IOS_SIMULATOR_LD="${IOS_SIMULATOR_PLATFORM}${LD}"
 IOS_SIMULATOR_AR="${IOS_SIMULATOR_PLATFORM}${AR}"
+IOS_SIMULATOR_RANLIB="${IOS_SIMULATOR_PLATFORM}${RANLIB}"
 
-unset CC CXX CPP LD AR
+unset CC CXX CPP LD AR RANLIB
 
 echo "* Installing [${PACKAGE_WITH_VERSION}] for [iOS ${SDK}]…"
 
