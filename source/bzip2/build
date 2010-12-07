@@ -7,10 +7,24 @@ DOWNLOAD_URL="http://bzip.org/${VERSION}/bzip2-${VERSION}.tar.gz"
 ARCHIVE_MD5="00b516f4704d4a7cb50a1d97e6e8e15b"
 
 function custom_build() {
-	make libbz2.a PREFIX="${IOS_DEVICE_PREFIX}" CC="${IOS_DEVICE_CC}" AR="${IOS_DEVICE_AR}" RANLIB="${IOS_DEVICE_RANLIB}" && \
+	make libbz2.a \
+		PREFIX="${IOS_DEVICE_PREFIX}" \
+		CC="${IOS_DEVICE_CC}" \
+		AR="${IOS_DEVICE_AR}" \
+		RANLIB="${IOS_DEVICE_RANLIB}" \
+		CFLAGS="${IOS_DEVICE_CFLAGS} -O3 -D_FILE_OFFSET_BITS=64" \
+		LDFLAGS="${IOS_DEVICE_LDFLAGS}" \
+	&& \
 	mv "${BUILD_ROOT}/libbz2.a" "${IOS_DEVICE_PREFIX}/lib/" && \
 	make clean && \
-	make libbz2.a PREFIX="${IOS_SIMULATOR_PREFIX}" CC="${IOS_SIMULATOR_CC}" AR="${IOS_SIMULATOR_AR}" RANLIB="${IOS_SIMULATOR_RANLIB}" && \
+	make libbz2.a \
+		PREFIX="${IOS_SIMULATOR_PREFIX}" \
+		CC="${IOS_SIMULATOR_CC}" \
+		AR="${IOS_SIMULATOR_AR}" \
+		RANLIB="${IOS_SIMULATOR_RANLIB}" \
+		CFLAGS="${IOS_SIMULATOR_CFLAGS} -O3 -D_FILE_OFFSET_BITS=64" \
+		LDFLAGS="${IOS_SIMULATOR_LDFLAGS}" \
+	&& \
 	mv "${BUILD_ROOT}/libbz2.a" "${IOS_SIMULATOR_PREFIX}/lib/" && \
 	make clean && \
 	cp "${BUILD_ROOT}/bzlib.h" "${IOS_SIMULATOR_PREFIX}/include/"
