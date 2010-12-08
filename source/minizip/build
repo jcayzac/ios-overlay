@@ -6,17 +6,18 @@ ARCHIVE_FILENAME="zlib-${VERSION}.tar.gz"
 DOWNLOAD_URL="http://sourceforge.net/projects/libpng/files/${ARCHIVE_FILENAME}/download"
 
 function custom_build() {
+	DEFS="-DSTDC -DNOUNCRYPT -DNOCRYPT -DNO_ADDFILEINEXISTINGZIP"
 	cd contrib/minizip && \
-	"${IOS_DEVICE_CC}" -c ${IOS_DEVICE_PERFORMANCE_CFLAGS} -I. unzip.c && \
-	"${IOS_DEVICE_CC}" -c ${IOS_DEVICE_PERFORMANCE_CFLAGS} -I. zip.c && \
-	"${IOS_DEVICE_CC}" -c ${IOS_DEVICE_PERFORMANCE_CFLAGS} -I. ioapi.c && \
+	"${IOS_DEVICE_CC}" -c ${IOS_DEVICE_PERFORMANCE_CFLAGS} -I. $DEFS unzip.c && \
+	"${IOS_DEVICE_CC}" -c ${IOS_DEVICE_PERFORMANCE_CFLAGS} -I. $DEFS zip.c && \
+	"${IOS_DEVICE_CC}" -c ${IOS_DEVICE_PERFORMANCE_CFLAGS} -I. $DEFS ioapi.c && \
 	"${IOS_DEVICE_AR}" -r "${IOS_DEVICE_PREFIX}/lib/minizip.a" unzip.o zip.o ioapi.o && \
 	mkdir -p "${IOS_DEVICE_PREFIX}/include/minizip" && \
 	cp unzip.h zip.h ioapi.h "${IOS_DEVICE_PREFIX}/include/minizip/" && \
 	rm *.o && \
-	"${IOS_SIMULATOR_CC}" -c ${IOS_SIMULATOR_CFLAGS} -I. unzip.c && \
-	"${IOS_SIMULATOR_CC}" -c ${IOS_SIMULATOR_CFLAGS} -I. zip.c && \
-	"${IOS_SIMULATOR_CC}" -c ${IOS_SIMULATOR_CFLAGS} -I. ioapi.c && \
+	"${IOS_SIMULATOR_CC}" -c ${IOS_SIMULATOR_CFLAGS} -I. $DEFS unzip.c && \
+	"${IOS_SIMULATOR_CC}" -c ${IOS_SIMULATOR_CFLAGS} -I. $DEFS zip.c && \
+	"${IOS_SIMULATOR_CC}" -c ${IOS_SIMULATOR_CFLAGS} -I. $DEFS ioapi.c && \
 	"${IOS_SIMULATOR_AR}" -r "${IOS_SIMULATOR_PREFIX}/lib/minizip.a" unzip.o zip.o ioapi.o && \
 	mkdir -p "${IOS_SIMULATOR_PREFIX}/include/minizip" && \
 	cp unzip.h zip.h ioapi.h "${IOS_SIMULATOR_PREFIX}/include/minizip/"
