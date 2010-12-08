@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "This build is not ready."
+exit 1
+
+VERSION="trunk"
+URL="http://code.google.com/p/opencollada/"
+DOWNLOAD_URL="svn|http://opencollada.googlecode.com/svn/trunk/"
+
+function color_message() {
+	echo -e "[32;1m[${@}][0m"
+}
+
+function custom_build() {
+	true
+}
+
+. "${IOS_OVERLAY_PATH}/scripts/builder"
+
