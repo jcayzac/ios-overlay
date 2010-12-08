@@ -50,6 +50,9 @@ function uncompress() {
 		*.tar.bz2)
 			tar -xvpjC "${BUILD_ROOT}" --strip-components 1 -f "${DOWNLOAD_LOCATION}"
 			;;
+		*.zip)
+			unzip "${DOWNLOAD_LOCATION}" -d "${BUILD_ROOT}"
+			;;
 		*)
 			false
 			check_status_fail "### Failed to uncompress [${DOWNLOAD_LOCATION}] (unknown archive type), exiting…"
