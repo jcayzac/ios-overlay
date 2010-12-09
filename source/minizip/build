@@ -9,15 +9,15 @@ function custom_build() {
 	DEFS="-DSTDC -DNOUNCRYPT -DNOCRYPT -DNO_ADDFILEINEXISTINGZIP"
 	cd contrib/minizip && \
 	"${IOS_DEVICE_CC}" -c ${IOS_DEVICE_PERFORMANCE_CFLAGS} -I. $DEFS unzip.c zip.c ioapi.c mztools.c && \
-	"${IOS_DEVICE_AR}" -r "${IOS_DEVICE_PREFIX}/lib/minizip.a" unzip.o zip.o ioapi.o mztools.o && \
+	"${IOS_DEVICE_AR}" -r "${IOS_DEVICE_PREFIX}/lib/libminizip.a" unzip.o zip.o ioapi.o mztools.o && \
 	mkdir -p "${IOS_DEVICE_PREFIX}/include/minizip" && \
 	cp unzip.h zip.h ioapi.h mztools.h "${IOS_DEVICE_PREFIX}/include/minizip/" && \
 	rm *.o && \
 	"${IOS_SIMULATOR_CC}" -c ${IOS_SIMULATOR_CFLAGS} -I. $DEFS unzip.c zip.c ioapi.c mztools.c && \
-	"${IOS_SIMULATOR_AR}" -r "${IOS_SIMULATOR_PREFIX}/lib/minizip.a" unzip.o zip.o ioapi.o mztools.o && \
+	"${IOS_SIMULATOR_AR}" -r "${IOS_SIMULATOR_PREFIX}/lib/libminizip.a" unzip.o zip.o ioapi.o mztools.o && \
 	mkdir -p "${IOS_SIMULATOR_PREFIX}/include/minizip" && \
 	cp unzip.h zip.h ioapi.h mztools.h "${IOS_SIMULATOR_PREFIX}/include/minizip/"
 }
 
-. "${IOS_OVERLAY_PATH}/scripts/builder"
+. "$(dirname "$0")/../../scripts/builder"
 

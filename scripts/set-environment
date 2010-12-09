@@ -1,0 +1,117 @@
+#!/bin/bash
+
+if [ -z "${IOS_SOURCED_SET_STANDARD_VARS}" ]
+then
+	IOS_SOURCED_SET_STANDARD_VARS=1
+
+	# Push all the command line arguments to the environment
+	declare IOS_OVERLAY=1 $@
+
+	IOS_PACKAGE_NAME=${IOS_PACKAGE_DIR##*/}
+	IOS_PACKAGE_WITH_VERSION="${IOS_PACKAGE_NAME}-$VERSION"
+
+	if [ -z "${ARCHIVE_FILENAME}" ]
+	then
+		ARCHIVE_FILENAME="${IOS_PACKAGE_NAME}-${VERSION}.placeholder"
+		IOS_IS_SCM=1
+	fi
+
+	IOS_DOWNLOAD_DIR="${IOS_OVERLAY_PATH}/distfiles"
+	IOS_DOWNLOAD_LOCATION="${IOS_DOWNLOAD_DIR}/${ARCHIVE_FILENAME}"
+
+	if [ -z "${TMPDIR}" ]
+	then
+		TMPDIR="/var/tmp"
+	fi
+	IOS_BUILD_DIR="${TMPDIR}/ios-overlay/${IOS_PACKAGE_WITH_VERSION}"
+
+	# Platforms
+	IOS_DEVICE_PLATFORM="/Developer/Platforms/iPhoneOS.platform/Developer"
+	IOS_SIMULATOR_PLATFORM="/Developer/Platforms/iPhoneSimulator.platform/Developer"
+
+	LATEST_SDK=$( find -s "${IOS_DEVICE_PLATFORM}/SDKs" -mindepth 1 -maxdepth 1 | tail -n 1 )
+	LATEST_SDK=${LATEST_SDK##*/iPhoneOS}
+	LATEST_SDK=${LATEST_SDK%*.sdk}
+
+	IOS_SDK="${SDK:-$LATEST_SDK}"
+
+	IOS_DEVICE_SDK="${IOS_DEVICE_PLATFORM}/SDKs/iPhoneOS${IOS_SDK}.sdk"
+	IOS_SIMULATOR_SDK="${IOS_SIMULATOR_PLATFORM}/SDKs/iPhoneSimulator${IOS_SDK}.sdk"
+
+	IOS_BASE_PREFIX="/iOS_SDK_Overlay/overlay"
+	IOS_DEVICE_PREFIX="${IOS_BASE_PREFIX}${IOS_DEVICE_SDK}/usr"
+	IOS_SIMULATOR_PREFIX="${IOS_BASE_PREFIX}${IOS_SIMULATOR_SDK}/usr"
+
+	# The user can override these on the command line
+	CC="${CC:-/usr/bin/gcc}"
+	CXX="${CXX:-/usr/bin/g++}"
+	CPP="${CPP:-/usr/bin/cpp}"
+	LD="${LD:-/usr/bin/ld}"
+	AR="${AR:-/usr/bin/ar}"
+	RANLIB="${RANLIB:-/usr/bin/ranlib}"
+
+	IOS_DEVICE_CC="${IOS_DEVICE_PLATFORM}${CC}"
+	IOS_DEVICE_CXX="${IOS_DEVICE_PLATFORM}${CXX}"
+	IOS_DEVICE_CPP="${IOS_DEVICE_PLATFORM}${CPP}"
+	IOS_DEVICE_LD="${IOS_DEVICE_PLATFORM}${LD}"
+	IOS_DEVICE_AR="${IOS_DEVICE_PLATFORM}${AR}"
+	IOS_DEVICE_RANLIB="${IOS_DEVICE_PLATFORM}${RANLIB}"
+	IOS_DEVICE_COMMON_FLAGS="\
+		-arch armv7 \
+		-mthumb \
+		-mcpu=cortex-a8 \
+		-mfloat-abi=softfp \
+		-mfpu=neon \
+		--sysroot ${IOS_DEVICE_SDK} \
+	"
+	IOS_DEVICE_CFLAGS="\
+		${IOS_DEVICE_COMMON_FLAGS} \
+		-I${IOS_DEVICE_PREFIX}/include \
+	"
+	IOS_DEVICE_LDFLAGS="\
+		${IOS_DEVICE_COMMON_FLAGS} \
+		-L${IOS_DEVICE_PREFIX}/lib \
+	"
+	IOS_DEVICE_PERFORMANCE_CFLAGS="\
+		${IOS_DEVICE_CFLAGS} \
+		-fstrict-aliasing \
+		-ftree-loop-ivcanon \
+		-fgcse-sm \
+		-fgcse-las \
+		-funsafe-loop-optimizations \
+		-fsee \
+		-fomit-frame-pointer \
+		-O3 \
+		-ffast-math \
+		-ftree-vectorize \
+	"
+
+	IOS_SIMULATOR_CC="${IOS_SIMULATOR_PLATFORM}${CC}"
+	IOS_SIMULATOR_CXX="${IOS_SIMULATOR_PLATFORM}${CXX}"
+	IOS_SIMULATOR_CPP="${IOS_SIMULATOR_PLATFORM}${CPP}"
+	IOS_SIMULATOR_LD="${IOS_SIMULATOR_PLATFORM}${LD}"
+	IOS_SIMULATOR_AR="${IOS_SIMULATOR_PLATFORM}${AR}"
+	IOS_SIMULATOR_RANLIB="${IOS_SIMULATOR_PLATFORM}${RANLIB}"
+	IOS_SIMULATOR_COMMON_FLAGS="\
+		-arch i386 \
+		--sysroot ${IOS_SIMULATOR_SDK} \
+	"
+	IOS_SIMULATOR_CFLAGS="\
+		${IOS_SIMULATOR_COMMON_FLAGS} \
+		-I${IOS_SIMULATOR_PREFIX}/include \
+	"
+	IOS_SIMULATOR_LDFLAGS="\
+		${IOS_SIMULATOR_COMMON_FLAGS} \
+		-L${IOS_SIMULATOR_PREFIX}/lib \
+	"
+
+	unset SDK CC CXX CPP LD AR RANLIB
+
+	function f() { echo "*** Failed to create needed directory structure."; exit 1; }
+	mkdir -p \
+		{"${IOS_DEVICE_PREFIX}","${IOS_SIMULATOR_PREFIX}"}/{include,lib,share,bin,var} \
+		"${IOS_DOWNLOAD_DIR}" \
+		"${IOS_DEVICE_PREFIX}" \
+		"${IOS_SIMULATOR_PREFIX}" || f
+fi
+

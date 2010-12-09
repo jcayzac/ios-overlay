@@ -7,7 +7,7 @@ DOWNLOAD_URL="http://sourceforge.net/projects/boost/files/boost/${VERSION}/${ARC
 DEPEND="bzip2"
 
 function write_jamfile() {
-	cat >"${BUILD_ROOT}/ios.jam" <<EOT
+	cat >"${IOS_BUILD_DIR}/ios.jam" <<EOT
 using darwin : iphone
 	: ${IOS_DEVICE_CC}
 	:
@@ -31,12 +31,12 @@ function custom_build() {
 	write_jamfile
 	./bootstrap.sh && \
 	./bjam \
-		--user-config="${BUILD_ROOT}/ios.jam" \
+		--user-config="${IOS_BUILD_DIR}/ios.jam" \
 		--prefix="${IOS_DEVICE_PREFIX}" \
 		toolset=darwin-iphone \
 		architecture=arm \
 		target-os=iphone \
-		macosx-version=iphone-${SDK} \
+		macosx-version=iphone-${IOS_SDK} \
 		link=static \
 		threading=multi \
 		--layout=system \
@@ -49,12 +49,12 @@ function custom_build() {
 		--without-program_options \
 		install && \
 	./bjam \
-		--user-config="${BUILD_ROOT}/ios.jam" \
+		--user-config="${IOS_BUILD_DIR}/ios.jam" \
 		--prefix="${IOS_SIMULATOR_PREFIX}" \
 		toolset=darwin-iphonesim \
 		architecture=x86 \
 		target-os=iphone \
-		macosx-version=iphone-${SDK} \
+		macosx-version=iphone-${IOS_SDK} \
 		link=static \
 		threading=multi \
 		--layout=system \
@@ -68,5 +68,5 @@ function custom_build() {
 		install
 }
 
-. "${IOS_OVERLAY_PATH}/scripts/builder"
+. "$(dirname "$0")/../../scripts/builder"
 

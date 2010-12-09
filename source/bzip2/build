@@ -15,9 +15,9 @@ function custom_build() {
 		CFLAGS="${IOS_DEVICE_PERFORMANCE_CFLAGS} -D_FILE_OFFSET_BITS=64" \
 		LDFLAGS="${IOS_DEVICE_LDFLAGS}" \
 	&& \
-	mv "${BUILD_ROOT}/libbz2.a" "${IOS_DEVICE_PREFIX}/lib/" && \
+	mv "${IOS_BUILD_DIR}/libbz2.a" "${IOS_DEVICE_PREFIX}/lib/" && \
 	make clean && \
-	cp "${BUILD_ROOT}/bzlib.h" "${IOS_DEVICE_PREFIX}/include/" && \
+	cp "${IOS_BUILD_DIR}/bzlib.h" "${IOS_DEVICE_PREFIX}/include/" && \
 	make libbz2.a \
 		PREFIX="${IOS_SIMULATOR_PREFIX}" \
 		CC="${IOS_SIMULATOR_CC}" \
@@ -26,10 +26,10 @@ function custom_build() {
 		CFLAGS="${IOS_SIMULATOR_CFLAGS} -O3 -D_FILE_OFFSET_BITS=64" \
 		LDFLAGS="${IOS_SIMULATOR_LDFLAGS}" \
 	&& \
-	mv "${BUILD_ROOT}/libbz2.a" "${IOS_SIMULATOR_PREFIX}/lib/" && \
+	mv "${IOS_BUILD_DIR}/libbz2.a" "${IOS_SIMULATOR_PREFIX}/lib/" && \
 	make clean && \
-	cp "${BUILD_ROOT}/bzlib.h" "${IOS_SIMULATOR_PREFIX}/include/"
+	cp "${IOS_BUILD_DIR}/bzlib.h" "${IOS_SIMULATOR_PREFIX}/include/"
 }
 
-. "${IOS_OVERLAY_PATH}/scripts/builder"
+. "$(dirname "$0")/../../scripts/builder"
 

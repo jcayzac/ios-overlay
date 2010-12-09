@@ -35,5 +35,5 @@ function custom_build() {
 	&& make install
 }
 
-. "${IOS_OVERLAY_PATH}/scripts/builder"
+. "$(dirname "$0")/../../scripts/builder"
 

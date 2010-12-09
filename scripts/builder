@@ -1,201 +1,130 @@
 #!/bin/bash
 
-# Push all the command line arguments to the environment
-declare IOS_OVERLAY=1 $@
-
-CURRENT_DIR=$(pwd)
-SELF="$0"
-PACKAGE_DIR=${0%/*}
-if [ -z "$PACKAGE_DIR" ]
+if [ -z "${IOS_SOURCED_BUILDER}" ]
 then
-	PACKAGE_DIR="."
-fi
+	IOS_SOURCED_BUILDER=1
 
-cd "${PACKAGE_DIR}"
-PACKAGE_DIR=$(pwd)
-SELF="${PACKAGE_DIR}/${SELF##*/}"
-cd "${CURRENT_DIR}"
-PACKAGE_NAME=${PACKAGE_DIR##*/}
-PACKAGE_WITH_VERSION="${PACKAGE_NAME}-$VERSION"
-DOWNLOAD_DIR="${IOS_OVERLAY_PATH}/distfiles"
+	# Save current dir so we can restore it before exiting
+	IOS_CURRENT_DIR=$(pwd)
 
-if [ -z "${ARCHIVE_FILENAME}" ]
-then
-	ARCHIVE_FILENAME="${PACKAGE_NAME}-${VERSION}.placeholder"
-	IS_SCM=1
-fi
-
-DOWNLOAD_LOCATION="${DOWNLOAD_DIR}/${ARCHIVE_FILENAME}"
-BUILD_ROOT="${TMPDIR}/ios-overlay/${PACKAGE_WITH_VERSION}"
-
-function restore_current_dir() {
-	cd "${CURRENT_DIR}"
-}
-
-function check_status_fail() {
-	if [ $? != 0 ]
+	# Determine where the package is,
+	# and what's ios-overlay install dir.
+	IOS_SELF="$0"
+	IOS_PACKAGE_DIR=${0%/*}
+	if [ -z "$IOS_PACKAGE_DIR" ]
 	then
-		echo -e $@
-		restore_current_dir
-		exit 1
+		IOS_PACKAGE_DIR="."
 	fi
-}
+	cd "${IOS_PACKAGE_DIR}"
+	IOS_PACKAGE_DIR=$(pwd)
+	IOS_SELF="${IOS_PACKAGE_DIR}/${IOS_SELF##*/}"
+	cd ../..
+	IOS_OVERLAY_PATH=$(pwd)
+	cd "${IOS_CURRENT_DIR}"
 
-function download_file() {
-	SPECIAL_SCHEME="${DOWNLOAD_URL%%|*}"
-	SPECIAL_LOCATION="${DOWNLOAD_URL#*|}"
-	case "${SPECIAL_SCHEME}" in
-		svn)
-			svn checkout "${SPECIAL_LOCATION}" "${BUILD_ROOT}"
-			;;
-		*)
-			wget -ct0 "$DOWNLOAD_URL" -O "${DOWNLOAD_LOCATION}"
-			;;
-	esac
-}
+	# Create /iOS_SDK_Overlay link if needed
+	# Warning: DO NOT *SOURCE* IT
+	"${IOS_OVERLAY_PATH}/scripts/check-root-link"
 
-function uncompress() {
-	mkdir -p "${BUILD_ROOT}"
-	case "${DOWNLOAD_LOCATION}" in
-		*.tar.gz)
-			tar -xvpzC "${BUILD_ROOT}" --strip-components 1 -f "${DOWNLOAD_LOCATION}"
-			;;
-		*.tar.bz2)
-			tar -xvpjC "${BUILD_ROOT}" --strip-components 1 -f "${DOWNLOAD_LOCATION}"
-			;;
-		*.zip)
-			unzip "${DOWNLOAD_LOCATION}" -d "${BUILD_ROOT}"
-			;;
-		*)
-			false
-			check_status_fail "### Failed to uncompress [${DOWNLOAD_LOCATION}] (unknown archive type), exiting…"
-			;;
-	esac
-}
+	# Set the rest of the environment
+	. "${IOS_OVERLAY_PATH}/scripts/set-environment"
 
-mkdir -p "${DOWNLOAD_DIR}"
+	function ios_restore_current_dir() {
+		cd "${IOS_CURRENT_DIR}"
+	}
 
-if [ -z "$SDK" ]
-then
-	SDK=$( find -s /Developer/Platforms/iPhoneOS.platform/Developer/SDKs -mindepth 1 -maxdepth 1 | tail -n 1 )
-	SDK=${SDK##*/iPhoneOS}
-	SDK=${SDK%*.sdk}
-fi
+	function ios_check_status_fail() {
+		if [ $? != 0 ]
+		then
+			echo -e $@
+			ios_restore_current_dir
+			exit 1
+		fi
+	}
 
-IOS_DEVICE_PLATFORM="/Developer/Platforms/iPhoneOS.platform/Developer"
-IOS_SIMULATOR_PLATFORM="/Developer/Platforms/iPhoneSimulator.platform/Developer"
+	function ios_download_file() {
+		SPECIAL_SCHEME="${IOS_DOWNLOAD_URL%%|*}"
+		SPECIAL_LOCATION="${IOS_DOWNLOAD_URL#*|}"
+		case "${SPECIAL_SCHEME}" in
+			svn)
+				svn checkout "${SPECIAL_LOCATION}" "${IOS_BUILD_DIR}"
+				;;
+			*)
+				wget -ct0 "$DOWNLOAD_URL" -O "${IOS_DOWNLOAD_LOCATION}"
+				;;
+		esac 
+		unset SPECIAL_SCHEME SPECIAL_LOCATION
+	}
 
-IOS_DEVICE_SDK="${IOS_DEVICE_PLATFORM}/SDKs/iPhoneOS${SDK}.sdk"
-IOS_SIMULATOR_SDK="${IOS_SIMULATOR_PLATFORM}/SDKs/iPhoneSimulator${SDK}.sdk"
+	function ios_uncompress() {
+		rm -rf "${IOS_BUILD_DIR}" 2>/dev/null && \
+		mkdir -p "${IOS_BUILD_DIR}" && \
+		case "${IOS_DOWNLOAD_LOCATION}" in
+			*.tar.gz)
+				tar -xvpzC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}"
+				;;
+			*.tar.bz2)
+				tar -xvpjC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}"
+				;;
+			*.zip)
+				unzip "${IOS_DOWNLOAD_LOCATION}" -d "${IOS_BUILD_DIR}"
+				;;
+			*)
+				false
+				ios_check_status_fail "### Failed to uncompress [${IOS_DOWNLOAD_LOCATION}] (unknown archive type), exiting…"
+				;;
+		esac
+	}
 
-IOS_DEVICE_PREFIX="${IOS_OVERLAY_PATH}/overlay${IOS_DEVICE_SDK}/usr"
-IOS_SIMULATOR_PREFIX="${IOS_OVERLAY_PATH}/overlay${IOS_SIMULATOR_SDK}/usr"
-
-mkdir -p "${IOS_DEVICE_PREFIX}"/{include,lib}
-mkdir -p "${IOS_SIMULATOR_PREFIX}"/{include,lib}
-
-if [ -z "$CC" ]
-then
-	CC="/usr/bin/gcc"
-fi
-
-if [ -z "$CXX" ]
-then
-	CXX="/usr/bin/g++"
-fi
-
-if [ -z "$CPP" ]
-then
-	CPP="/usr/bin/cpp"
-fi
-
-if [ -z "$LD" ]
-then
-	LD="/usr/bin/ld"
-fi
-
-if [ -z "$AR" ]
-then
-	AR="/usr/bin/ar"
-fi
-
-if [ -z "$RANLIB" ]
-then
-	RANLIB="/usr/bin/ranlib"
-fi
-
-IOS_DEVICE_CC="${IOS_DEVICE_PLATFORM}${CC}"
-IOS_DEVICE_CXX="${IOS_DEVICE_PLATFORM}${CXX}"
-IOS_DEVICE_CPP="${IOS_DEVICE_PLATFORM}${CPP}"
-IOS_DEVICE_LD="${IOS_DEVICE_PLATFORM}${LD}"
-IOS_DEVICE_AR="${IOS_DEVICE_PLATFORM}${AR}"
-IOS_DEVICE_RANLIB="${IOS_DEVICE_PLATFORM}${RANLIB}"
-IOS_DEVICE_COMMON_FLAGS="-arch armv7 -mthumb -mcpu=cortex-a8 -mfloat-abi=softfp -mfpu=neon --sysroot ${IOS_DEVICE_SDK}"
-IOS_DEVICE_CFLAGS="${IOS_DEVICE_COMMON_FLAGS} -I${IOS_DEVICE_PREFIX}/include"
-IOS_DEVICE_LDFLAGS="${IOS_DEVICE_COMMON_FLAGS} -L${IOS_DEVICE_PREFIX}/lib"
-IOS_DEVICE_PERFORMANCE_CFLAGS="${IOS_DEVICE_CFLAGS} -fstrict-aliasing -ftree-loop-ivcanon -fgcse-sm -fgcse-las -funsafe-loop-optimizations -fsee -fomit-frame-pointer -O3 -ffast-math -ftree-vectorize"
-
-IOS_SIMULATOR_CC="${IOS_SIMULATOR_PLATFORM}${CC}"
-IOS_SIMULATOR_CXX="${IOS_SIMULATOR_PLATFORM}${CXX}"
-IOS_SIMULATOR_CPP="${IOS_SIMULATOR_PLATFORM}${CPP}"
-IOS_SIMULATOR_LD="${IOS_SIMULATOR_PLATFORM}${LD}"
-IOS_SIMULATOR_AR="${IOS_SIMULATOR_PLATFORM}${AR}"
-IOS_SIMULATOR_RANLIB="${IOS_SIMULATOR_PLATFORM}${RANLIB}"
-IOS_SIMULATOR_COMMON_FLAGS="-arch i386 --sysroot ${IOS_SIMULATOR_SDK}"
-IOS_SIMULATOR_CFLAGS="${IOS_SIMULATOR_COMMON_FLAGS} -I${IOS_SIMULATOR_PREFIX}/include"
-IOS_SIMULATOR_LDFLAGS="${IOS_SIMULATOR_COMMON_FLAGS} -L${IOS_SIMULATOR_PREFIX}/lib"
-
-
-unset CC CXX CPP LD AR RANLIB
-
-echo "* Installing [${PACKAGE_WITH_VERSION}] for [iOS ${SDK}]…"
-echo "    Work directory: ${BUILD_ROOT}"
-echo "    Downloading [${DOWNLOAD_URL}]…"
-if [ ! -r "${DOWNLOAD_LOCATION}" -o ! -z "$IS_SCM" ]
-then
-	rm -f "${DOWNLOAD_LOCATION}" 2>/dev/null
-	if type custom_download_file >/dev/null 2>&1
+	echo "* Installing [${IOS_PACKAGE_WITH_VERSION}] for [iOS ${IOS_SDK}]…"
+	echo "    Work directory: ${IOS_BUILD_DIR}"
+	echo "    Downloading [${DOWNLOAD_URL}]…"
+	if [ ! -r "${IOS_DOWNLOAD_LOCATION}" -o ! -z "$IOS_IS_SCM" ]
 	then
-		custom_download_file
+		rm -f "${IOS_DOWNLOAD_LOCATION}" 2>/dev/null
+		if type custom_download_file >/dev/null 2>&1
+		then
+			custom_download_file
+		else
+			ios_download_file
+		fi
+		ios_check_status_fail "### Failed to download ${DOWNLOAD_URL}, exiting…"
+	fi
+
+	if [ -z "$IOS_IS_SCM" ]
+	then
+		echo "    Uncompressing [${ARCHIVE_FILENAME}] into [${IOS_BUILD_DIR}]…"
+		rm -rf "${IOS_BUILD_DIR}" 2>/dev/null
+		mkdir -p "${IOS_BUILD_DIR}" 2>/dev/null
+		if type custom_uncompress >/dev/null 2>&1
+		then
+			custom_uncompress
+		else
+			ios_uncompress
+		fi
+		ios_check_status_fail "### Failed to uncompress ${IOS_DOWNLOAD_LOCATION}, exiting…"
+	fi
+
+	if [ -r "${IOS_PACKAGE_DIR}/${IOS_PACKAGE_WITH_VERSION}.patch" ]
+	then
+		echo "    Patching [${IOS_BUILD_DIR}]…"
+		patch -d "${IOS_BUILD_DIR}" -p1 -i "${IOS_PACKAGE_DIR}/${IOS_PACKAGE_WITH_VERSION}.patch"
+	fi
+	ios_check_status_fail "### Failed to apply patch on [${IOS_BUILD_DIR}], exiting…"
+
+	echo "    Building…"
+	cd "${IOS_BUILD_DIR}"
+
+	if type custom_build >/dev/null 2>&1
+	then
+		custom_build
+		ios_check_status_fail "### Failed to build ${IOS_PACKAGE_WITH_VERSION}, exiting…"
 	else
-		download_file
+		false
+		ios_check_status_fail "### No custom_build() function defined in [${IOS_SELF}], exiting…"
 	fi
-	check_status_fail "### Failed to download ${DOWNLOAD_URL}, exiting…"
+
+	ios_restore_current_dir
+	echo "    All done!"
 fi
-
-if [ -z "$IS_SCM" ]
-then
-	echo "    Uncompressing [${ARCHIVE_FILENAME}] into [${BUILD_ROOT}]…"
-	rm -rf "${BUILD_ROOT}" 2>/dev/null
-	mkdir -p "${BUILD_ROOT}" 2>/dev/null
-	if type custom_uncompress >/dev/null 2>&1
-	then
-		custom_uncompress
-	else
-		uncompress
-	fi
-	check_status_fail "### Failed to uncompress ${DOWNLOAD_LOCATION}, exiting…"
-fi
-
-if [ -r "${PACKAGE_DIR}/${PACKAGE_WITH_VERSION}.patch" ]
-then
-	echo "    Patching [${BUILD_ROOT}]…"
-	patch -d "${BUILD_ROOT}" -p1 -i "${PACKAGE_DIR}/${PACKAGE_WITH_VERSION}.patch"
-fi
-check_status_fail "### Failed to apply patch on [${BUILD_ROOT}], exiting…"
-
-echo "    Building…"
-cd "${BUILD_ROOT}"
-
-if type custom_build >/dev/null 2>&1
-then
-	custom_build
-	check_status_fail "### Failed to build ${PACKAGE_WITH_VERSION}, exiting…"
-else
-	false
-	check_status_fail "### No custom_build() function defined in [${SELF}], exiting…"
-fi
-
-restore_current_dir
-echo "    All done!"
 

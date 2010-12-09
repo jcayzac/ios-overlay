@@ -18,5 +18,5 @@ function custom_build() {
 		prefix="${IOS_SIMULATOR_PREFIX}" install
 }
 
-. "${IOS_OVERLAY_PATH}/scripts/builder"
+. "$(dirname "$0")/../../scripts/builder"
 
