@@ -12,7 +12,6 @@ Do we want them? Some library could have automatically generated public headers 
 ##Future
 Libraries to be added in near future:
 
-* libjpeg
 * libpng
 * [DevIL](http://openil.sourceforge.net/) (a.k.a. OpenIL)
 * [Tremor](http://wiki.xiph.org/Tremor), or rather my ARM-optimized version.
