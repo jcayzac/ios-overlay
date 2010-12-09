@@ -29,52 +29,8 @@ then
 	# Set the rest of the environment
 	. "${IOS_OVERLAY_PATH}/scripts/set-environment"
 
-	function ios_restore_current_dir() {
-		cd "${IOS_CURRENT_DIR}"
-	}
-
-	function ios_check_status_fail() {
-		if [ $? != 0 ]
-		then
-			echo -e $@
-			ios_restore_current_dir
-			exit 1
-		fi
-	}
-
-	function ios_download_file() {
-		SPECIAL_SCHEME="${IOS_DOWNLOAD_URL%%|*}"
-		SPECIAL_LOCATION="${IOS_DOWNLOAD_URL#*|}"
-		case "${SPECIAL_SCHEME}" in
-			svn)
-				svn checkout "${SPECIAL_LOCATION}" "${IOS_BUILD_DIR}"
-				;;
-			*)
-				wget -ct0 "$DOWNLOAD_URL" -O "${IOS_DOWNLOAD_LOCATION}"
-				;;
-		esac 
-		unset SPECIAL_SCHEME SPECIAL_LOCATION
-	}
-
-	function ios_uncompress() {
-		rm -rf "${IOS_BUILD_DIR}" 2>/dev/null && \
-		mkdir -p "${IOS_BUILD_DIR}" && \
-		case "${IOS_DOWNLOAD_LOCATION}" in
-			*.tar.gz)
-				tar -xvpzC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}"
-				;;
-			*.tar.bz2)
-				tar -xvpjC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}"
-				;;
-			*.zip)
-				unzip "${IOS_DOWNLOAD_LOCATION}" -d "${IOS_BUILD_DIR}"
-				;;
-			*)
-				false
-				ios_check_status_fail "### Failed to uncompress [${IOS_DOWNLOAD_LOCATION}] (unknown archive type), exiting…"
-				;;
-		esac
-	}
+	# Load functions
+	. "${IOS_OVERLAY_PATH}/scripts/functions"
 
 	echo "* Installing [${IOS_PACKAGE_WITH_VERSION}] for [iOS ${IOS_SDK}]…"
 	echo "    Work directory: ${IOS_BUILD_DIR}"
