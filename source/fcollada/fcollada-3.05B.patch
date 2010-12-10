@@ -1,0 +1,247 @@
+diff -ru fcollada-3.05B.orig/FCollada/FCDocument/FCDAnimated.h fcollada-3.05B.patched/FCollada/FCDocument/FCDAnimated.h
+--- fcollada-3.05B.orig/FCollada/FCDocument/FCDAnimated.h	2010-12-10 17:29:51.000000000 +0900
++++ fcollada-3.05B.patched/FCollada/FCDocument/FCDAnimated.h	2010-12-10 17:57:37.000000000 +0900
+@@ -276,12 +276,8 @@
+ private:
+ 	DeclareObjectType(FCDAnimated);
+ 	float dummy;
+-
+-	bool Link(xmlNode* node);
+-
+ public:
+-	/** [INTERNAL]
+-        Don't build directly.
++	/** [INTERNAL] Don't build directly.
+         @param object The object that owns this animated value. */
+ 	FCDAnimatedCustom(FCDObject* object);
+ 
+diff -ru fcollada-3.05B.orig/FCollada/FCDocument/FCDPhysicsModel.cpp fcollada-3.05B.patched/FCollada/FCDocument/FCDPhysicsModel.cpp
+--- fcollada-3.05B.orig/FCollada/FCDocument/FCDPhysicsModel.cpp	2010-12-10 17:29:51.000000000 +0900
++++ fcollada-3.05B.patched/FCollada/FCDocument/FCDPhysicsModel.cpp	2010-12-10 17:34:02.000000000 +0900
+@@ -134,7 +134,7 @@
+ 					{
+ 						// we have cyclic referencing!
+ 						FUError::Error(FUError::ERROR_LEVEL, FUError::ERROR_PHYSICS_MODEL_CYCLE_DETECTED, 
+-								modelNameNode->first->line);
++								(uintptr_t) modelNameNode->first);
+ 						status &= false;
+ 						break;
+ 					}
+@@ -149,7 +149,7 @@
+ 			}
+ 			else
+ 			{
+-				FUError::Error(FUError::WARNING_LEVEL, FUError::WARNING_CORRUPTED_INSTANCE, modelNameNode->first->line);
++				FUError::Error(FUError::WARNING_LEVEL, FUError::WARNING_CORRUPTED_INSTANCE, (uintptr_t) modelNameNode->first);
+ 			}
+ 		}
+ 
+diff -ru fcollada-3.05B.orig/FCollada/FCDocument/FCDPhysicsModel.h fcollada-3.05B.patched/FCollada/FCDocument/FCDPhysicsModel.h
+--- fcollada-3.05B.orig/FCollada/FCDocument/FCDPhysicsModel.h	2010-12-10 17:29:51.000000000 +0900
++++ fcollada-3.05B.patched/FCollada/FCDocument/FCDPhysicsModel.h	2010-12-10 17:34:23.000000000 +0900
+@@ -43,7 +43,7 @@
+ class FCOLLADA_EXPORT FCDPhysicsModel : public FCDEntity
+ {
+ private:
+-	typedef fm::map<xmlNode*, FUUri> ModelInstanceNameNodeMap;
++	typedef fm::map<void*, FUUri> ModelInstanceNameNodeMap;
+ 
+ 	DeclareObjectType(FCDEntity);
+ 	FCDPhysicsModelInstanceContainer instances;
+diff -ru fcollada-3.05B.orig/FCollada/FMath/FMath.h fcollada-3.05B.patched/FCollada/FMath/FMath.h
+--- fcollada-3.05B.orig/FCollada/FMath/FMath.h	2008-02-14 16:18:04.000000000 +0900
++++ fcollada-3.05B.patched/FCollada/FMath/FMath.h	2010-12-10 18:12:57.000000000 +0900
+@@ -103,13 +103,9 @@
+ 	/** Determines if given float is encoding for not a number (NAN).
+ 		@param f The float to check.
+ 		@return 0 if it is a number, something else if is NAN. */
+-#ifdef WIN32
+-	inline int IsNotANumber(float f) { return _isnan(f); }
+-#elif __PPU__
+-	inline int IsNotANumber(float f) { return !isfinite(f); }
+-#else // Linux and Mac
+-	inline int IsNotANumber(float f) { return !finite(f); }
+-#endif
++	inline int IsNotANumber(float f) {
++		return !isfinite(f);
++	}
+ 
+ 	/**	Retrieves the sign of a number.
+ 		@param val The number to check.
+diff -ru fcollada-3.05B.orig/FCollada/FMath/StdAfx.h fcollada-3.05B.patched/FCollada/FMath/StdAfx.h
+--- fcollada-3.05B.orig/FCollada/FMath/StdAfx.h	2008-02-07 14:35:28.000000000 +0900
++++ fcollada-3.05B.patched/FCollada/FMath/StdAfx.h	2010-12-10 18:45:22.000000000 +0900
+@@ -9,7 +9,11 @@
+ #ifndef _STD_AFX_H_
+ #define _STD_AFX_H_
+ 
++#include <stdlib.h>
++
++#ifndef NO_LIBXML
+ #define NO_LIBXML
++#endif
+ #include "FUtils/FUtils.h"
+ 
+ #endif // _STD_AFX_H_
+diff -ru fcollada-3.05B.orig/FCollada/FUtils/FUAssert.cpp fcollada-3.05B.patched/FCollada/FUtils/FUAssert.cpp
+--- fcollada-3.05B.orig/FCollada/FUtils/FUAssert.cpp	2008-02-07 14:35:28.000000000 +0900
++++ fcollada-3.05B.patched/FCollada/FUtils/FUAssert.cpp	2010-12-10 18:51:08.000000000 +0900
+@@ -8,9 +8,6 @@
+ 
+ #include "StdAfx.h"
+ #include "FUAssert.h"
+-#ifdef __APPLE__
+-#include <CoreServices/CoreServices.h>
+-#endif
+ 
+ 
+ static FUAssertion::FUAssertCallback* curAssertCallback = NULL;
+@@ -29,28 +26,7 @@
+ 	if (curAssertCallback != NULL) return (*curAssertCallback)(message);
+ #ifdef _DEBUG
+ 	else
+-	{
+-#ifdef WIN32
+-		int32 buttonPressed = MessageBoxA(NULL, message, "Assertion failed.", MB_ABORTRETRYIGNORE | MB_ICONWARNING);
+-		if (buttonPressed == IDABORT)
+-		{
+-			__debugbreak();
+-		}
+-		else if (buttonPressed == IDRETRY) {}
+-		else if (buttonPressed == IDIGNORE) 
+-		{ 
+-			return true; 
+-		}
+-#elif defined (__APPLE__)
+-		Debugger();
+-		//SysBreak();
+-#else
+-		// AFAIK This is available on all X86 platforms
+-		__asm__("int $0x03");
+-#endif // WIN32
+-		return false;
+-	}
+-#else // _DEBUG
++		assert(false);
++#endif
+ 	return false;
+-#endif // _DEBUG
+ }
+diff -ru fcollada-3.05B.orig/FCollada/FUtils/FUCriticalSection.h fcollada-3.05B.patched/FCollada/FUtils/FUCriticalSection.h
+--- fcollada-3.05B.orig/FCollada/FUtils/FUCriticalSection.h	2008-02-07 14:35:28.000000000 +0900
++++ fcollada-3.05B.patched/FCollada/FUtils/FUCriticalSection.h	2010-12-10 18:09:24.000000000 +0900
+@@ -14,10 +14,6 @@
+ #ifndef _FU_CRITICAL_SECTION_H_
+ #define _FU_CRITICAL_SECTION_H_
+ 
+-#ifdef __APPLE__
+-#include <CoreServices/CoreServices.h>
+-#endif
+-
+ /**
+ 	An OS dependent critical section.
+ 	
+@@ -30,12 +26,7 @@
+ private:
+ #ifdef WIN32
+ 	CRITICAL_SECTION criticalSection; // WIN32
+-#elif defined (__APPLE__)
+-	//Do something here.
+-	MPCriticalRegionID criticalSection;
+-#elif defined (LINUX)
+ #else
+-#warning "FUCriticalSection: Critical section not implemented for other platforms."
+ #endif
+ 
+ public:
+diff -ru fcollada-3.05B.orig/FCollada/FUtils/FUFileManager.cpp fcollada-3.05B.patched/FCollada/FUtils/FUFileManager.cpp
+--- fcollada-3.05B.orig/FCollada/FUtils/FUFileManager.cpp	2010-12-10 17:29:51.000000000 +0900
++++ fcollada-3.05B.patched/FCollada/FUtils/FUFileManager.cpp	2010-12-10 17:35:36.000000000 +0900
+@@ -21,9 +21,6 @@
+ 
+ #if defined(WIN32)
+ 	#include <direct.h>
+-#elif defined(__APPLE__)
+-	#include <mach-o/dyld.h>
+-	typedef int (*NSGetExecutablePathProcPtr)(char *buf, size_t *bufsize);
+ #elif defined(LINUX)
+ #include <sys/types.h>
+ #include <sys/stat.h>
+@@ -212,9 +209,6 @@
+ 	if (err == EEXIST) return true;
+ #elif defined(LINUX)
+ 	if (mkdir(TO_STRING(absoluteDirectory).c_str(), ~0u) == 0) return true; // I think this means all permissions..
+-#elif defined(__APPLE__)
+-	fm::string _fname = TO_STRING(directory);
+-	OSErr err = AddFolderDescriptor('extn', 0, 'relf', 0, 0, 0, _fname.c_str(), false);
+ #endif // WIN32
+ 
+ 	return false;
+@@ -389,7 +383,7 @@
+ 		}
+ 		else
+ 		{
+-			path[max(1023u, size)] = '\0';
++			path[max((size_t) 1023u, size)] = '\0';
+ 			int i = stat (path, &stat_buf);
+ 			if (i == -1) break; 
+ 			else if (!S_ISLNK(stat_buf.st_mode)) break;
+@@ -399,20 +393,6 @@
+ 	//"path" should have the application folder path in it.
+ 	const char * exeName = &path[0];
+ 	_uri = TO_FSTRING(exeName);
+-#elif defined(__APPLE__)
+-	char path[1024];
+-	size_t pathLength = 1023;
+-	static NSGetExecutablePathProcPtr NSGetExecutablePath = NULL;
+-	if (NSGetExecutablePath == NULL)
+-	{
+-		NSGetExecutablePath = (NSGetExecutablePathProcPtr) NSAddressOfSymbol(NSLookupAndBindSymbol("__NSGetExecutablePath"));
+-	}
+-	if (NSGetExecutablePath != NULL)
+-	{
+-		(*NSGetExecutablePath)(path, &pathLength);
+-		path[1023] = 0;
+-	}
+-	_uri = TO_FSTRING((const char*) path);
+ #endif // WIN32
+ 
+ 	fstring out;
+diff -ru fcollada-3.05B.orig/FCollada/FUtils/FUSemaphore.h fcollada-3.05B.patched/FCollada/FUtils/FUSemaphore.h
+--- fcollada-3.05B.orig/FCollada/FUtils/FUSemaphore.h	2008-02-07 14:35:28.000000000 +0900
++++ fcollada-3.05B.patched/FCollada/FUtils/FUSemaphore.h	2010-12-10 18:52:01.000000000 +0900
+@@ -14,10 +14,6 @@
+ #ifndef _FU_SEMAPHORE_H_
+ #define _FU_SEMAPHORE_H_
+ 
+-#ifdef __APPLE__
+-#include <CoreServices/CoreServices.h>
+-#endif
+-
+ /**
+ 	An OS independent semaphore. 
+ 	
+@@ -30,10 +26,6 @@
+ private:
+ #ifdef WIN32
+ 	HANDLE semaphoreHandle; // WIN32
+-#elif defined (__APPLE__)
+-	MPTaskID semaphoreHandle;
+-#else
+-#warning "FUSemaphore: Semaphore not implemented for non Windows"
+ #endif
+ 
+ public:
+diff -ru fcollada-3.05B.orig/FCollada/FUtils/StdAfx.h fcollada-3.05B.patched/FCollada/FUtils/StdAfx.h
+--- fcollada-3.05B.orig/FCollada/FUtils/StdAfx.h	2008-02-07 14:35:28.000000000 +0900
++++ fcollada-3.05B.patched/FCollada/FUtils/StdAfx.h	2010-12-10 18:49:52.000000000 +0900
+@@ -9,6 +9,9 @@
+ #ifndef _STD_AFX_H_
+ #define _STD_AFX_H_
+ 
++#include <stdlib.h>
++#include <assert.h>
++
+ #include "FUtils/FUtils.h"
+ 
+ #endif // _STD_AFX_H_

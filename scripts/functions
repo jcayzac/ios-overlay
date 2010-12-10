@@ -32,8 +32,6 @@ then
 	}
 
 	function ios_uncompress() {
-		rm -rf "${IOS_BUILD_DIR}" 2>/dev/null && \
-		mkdir -p "${IOS_BUILD_DIR}" && \
 		case "${IOS_DOWNLOAD_LOCATION}" in
 			*.tar.gz)
 				tar -xvpzC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}"
