@@ -15,7 +15,7 @@ Libraries to be added in near future:
 * libpng
 * ICU
 * [libtxc_dxtn](http://homepage.hispeed.ch/rscheidegger/dri_experimental/s3tc_index.html) (remove divisions and decode pixel blocks + use std types rather than GL types)
-* [DevIL](http://openil.sourceforge.net/) (a.k.a. OpenIL)
+* [DevIL](http://openil.sourceforge.net/)? (a.k.a. OpenIL) But it's LGPL…
 * [Tremor](http://wiki.xiph.org/Tremor), or rather my ARM-optimized version.
 * [TinyVector](http://code.google.com/p/tinyvector/)
 * [TinyXML](http://www.grinninglizard.com/tinyxml/)
@@ -26,5 +26,6 @@ Libraries to be added in near future:
 * [zziblib](http://zziplib.sourceforge.net/)
 * expat
 * OpenCV
+* [FLANN](http://www.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN)
 
 

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+VERSION="2.77"
+URL="http://www.bulletphysics.com/"
+ARCHIVE_FILENAME="bullet-${VERSION}.tgz"
+DOWNLOAD_URL="http://bullet.googlecode.com/files/${ARCHIVE_FILENAME}"
+DEPEND=""
+
+# TODO: install the vectormath library separately, and use
+# -DUSE_SYSTEM_VECTORMATH
+
+function color_message() {
+	echo -e "[32;1m[${@}][0m"
+}
+
+function custom_build() {
+	echo "I'm working on this package, hold on! :-)"
+	exit 1
+
+	rm -rf build 2>/dev/null
+	mkdir build && \
+	cd build && \
+	find ../src/{LinearMath,BulletCollision,BulletDynamics} -iname "*.cpp" -print0 | \
+		xargs -0 -t -P 4 -I % \
+		"${CXX}" -c ${CFLAGS} -DNDEBUG -I../src % && \
+	"${AR}" -r "${PREFIX}/lib/libBullet.a" *.o
+}
+
+. "$(dirname "$0")/../../scripts/builder"
+

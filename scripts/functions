@@ -63,7 +63,9 @@ then
 			then
 				custom_uncompress
 			else
-				case "${IOS_DOWNLOAD_LOCATION}" in
+				local x_loc="${IOS_DOWNLOAD_LOCATION}"
+				x_loc="${x_loc//.tgz/.tar.gz}"
+				case "${x_loc}" in
 				*.tar.gz)
 					tar -xvpzC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}"
 					;;
