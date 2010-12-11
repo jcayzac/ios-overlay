@@ -8,46 +8,127 @@ then
 		cd "${IOS_CURRENT_DIR}"
 	}
 
-	function ios_check_status_fail() {
-		if [ $? != 0 ]
-		then
-			echo -e $@
-			ios_restore_current_dir
-			exit 1
-		fi
+	function ios_exit_with_msg() {
+		echo -e $@
+		ios_restore_current_dir
+		exit 1
 	}
 
-	function ios_download_file() {
-		SPECIAL_SCHEME="${IOS_DOWNLOAD_URL%%|*}"
-		SPECIAL_LOCATION="${IOS_DOWNLOAD_URL#*|}"
-		case "${SPECIAL_SCHEME}" in
-			svn)
-				svn checkout "${SPECIAL_LOCATION}" "${IOS_BUILD_DIR}"
-				;;
-			*)
-				wget -ct0 "$DOWNLOAD_URL" -O "${IOS_DOWNLOAD_LOCATION}"
-				;;
-		esac 
-		unset SPECIAL_SCHEME SPECIAL_LOCATION
-	}
-
-	function ios_uncompress() {
-		case "${IOS_DOWNLOAD_LOCATION}" in
-			*.tar.gz)
-				tar -xvpzC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}"
-				;;
-			*.tar.bz2)
-				tar -xvpjC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}"
-				;;
-			*.zip)
-				unzip "${IOS_DOWNLOAD_LOCATION}" -d "${IOS_BUILD_DIR}"
-				;;
-			*)
-				false
-				ios_check_status_fail "### Failed to uncompress [${IOS_DOWNLOAD_LOCATION}] (unknown archive type), exiting…"
-				;;
+	function ios_check_license() {
+		LICENSE="${LICENSE:-OK}"
+		case "$LICENSE" in
+		LGPL)
+			if [ -z "${LGPL+defined}" ]
+			then
+				cat <<-EOT
+					$IOS_PACKAGE_WITH_VERSION is LGPL, which means it cannot be statically linked.
+					
+					To build it anyway, add "LGPL" to your command line parameters.
+				EOT
+				exit 1
+			fi
+			;;
+		*) true
+			;;
 		esac
 	}
 
+	function ios_download_file() {
+		if [ ! -r "${IOS_DOWNLOAD_LOCATION}" -o ! -z "$IOS_IS_SCM" ]
+		then
+			rm -f "${IOS_DOWNLOAD_LOCATION}" 2>/dev/null
+			if type custom_download_file >/dev/null 2>&1
+			then
+				SPECIAL_SCHEME="${IOS_DOWNLOAD_URL%%|*}" SPECIAL_LOCATION="${IOS_DOWNLOAD_URL#*|}" custom_download_file
+			else
+				case "${IOS_DOWNLOAD_URL%%|*}" in
+				svn)
+					svn checkout "${IOS_DOWNLOAD_URL#*|}" "${IOS_BUILD_DIR}"
+					;;
+				*)
+					wget -ct0 "$DOWNLOAD_URL" -O "${IOS_DOWNLOAD_LOCATION}"
+					;;
+				esac
+			fi
+		fi || ios_exit_with_msg "### Failed to download ${DOWNLOAD_URL}, exiting…"
+	}
+
+	function ios_uncompress() {
+		if [ -z "$IOS_IS_SCM" ]
+		then
+			echo "    Uncompressing [${ARCHIVE_FILENAME}] into [${IOS_BUILD_DIR}]…"
+			rm -rf "${IOS_BUILD_DIR}" 2>/dev/null
+			mkdir -p "${IOS_BUILD_DIR}" 2>/dev/null && \
+			if type custom_uncompress >/dev/null 2>&1
+			then
+				custom_uncompress
+			else
+				case "${IOS_DOWNLOAD_LOCATION}" in
+				*.tar.gz)
+					tar -xvpzC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}"
+					;;
+				*.tar.bz2)
+					tar -xvpjC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}"
+					;;
+				*.zip)
+					unzip "${IOS_DOWNLOAD_LOCATION}" -d "${IOS_BUILD_DIR}"
+					;;
+				*)
+					echo "Error: Unknown archive type"
+					false
+					;;
+				esac
+			fi
+		fi || ios_exit_with_msg "### Failed to uncompress ${IOS_DOWNLOAD_LOCATION}, exiting…"
+	}
+
+	function ios_autopatch() {
+		# TODO: Add multiple patch ability
+		if [ -r "${IOS_PACKAGE_DIR}/${IOS_PACKAGE_WITH_VERSION}.patch" ]
+		then
+			echo "    Patching [${IOS_BUILD_DIR}]…"
+			patch -d "${IOS_BUILD_DIR}" -p1 -i "${IOS_PACKAGE_DIR}/${IOS_PACKAGE_WITH_VERSION}.patch"
+		fi || ios_exit_with_msg "### Failed to apply patch on [${IOS_BUILD_DIR}], exiting…"
+	}
+
+	function ios_build_all() {
+		echo "    Building…"
+		if type custom_build >/dev/null 2>&1
+		then
+			for platform in device simulator
+			do
+				local x_platform=$(echo $platform | tr '[:lower:]' '[:upper:]')
+				local x_sdk_dir="IOS_${x_platform}_SDK"
+				local x_cc="IOS_${x_platform}_CC"
+				local x_cxx="IOS_${x_platform}_CXX"
+				local x_cpp="IOS_${x_platform}_CPP"
+				local x_ld="IOS_${x_platform}_LD"
+				local x_ar="IOS_${x_platform}_AR"
+				local x_ranlib="IOS_${x_platform}_RANLIB"
+				local x_cflags="IOS_${x_platform}_CFLAGS"
+				local x_ldflags="IOS_${x_platform}_LDFLAGS"
+				local x_prefix="IOS_${x_platform}_PREFIX"
+				local x_platform="IOS_${x_platform}_PLATFORM"
+
+				cd "${IOS_BUILD_DIR}"
+
+				SDK_DIR="${!x_sdk_dir}"
+				CC="${!x_cc}"
+				CXX="${!x_cxx}"
+				CPP="${!x_cpp}"
+				LD="${!x_ld}"
+				AR="${!x_ar}"
+				RANLIB="${!x_ranlib}"
+				CFLAGS="${!x_cflags}"
+				LDFLAGS="${!x_ldflags}"
+				PREFIX="${!x_prefix}"
+				PLATFORM="${!x_platform}"
+				TARGET=$platform
+
+				custom_build
+
+			done || ios_exit_with_msg "### Failed to build ${IOS_PACKAGE_WITH_VERSION}, exiting…"
+		fi
+	}
 fi
 

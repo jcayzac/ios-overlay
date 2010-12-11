@@ -10,53 +10,47 @@ function write_jamfile() {
 	cat >"${IOS_BUILD_DIR}/ios.jam" <<EOT
 using darwin : iphone
 	: ${IOS_DEVICE_CC}
-	:
-	<striper>
-	<compileflags>"${IOS_DEVICE_PERFORMANCE_CFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -D_LITTLE_ENDIAN"
-	<linkflags>"${IOS_DEVICE_LDFLAGS}"
+	: <striper>
 	: <architecture>arm <target-os>iphone
 ;
 
 using darwin : iphonesim
 	: ${IOS_SIMULATOR_CC}
 	: <striper>
-	<compileflags>"${IOS_SIMULATOR_CFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden"
-	<linkflags>"${IOS_SIMULATOR_LDFLAGS}"
 	: <architecture>x86 <target-os>iphone
 ;
 EOT
 }
 
 function custom_build() {
-	write_jamfile
-	./bootstrap.sh && \
+	if [ "$TARGET" == "device" ]
+	then
+		local x_toolset=iphone
+		local x_arch=arm
+		local x_defs="_LITTLE_ENDIAN"
+	else
+		local x_toolset=iphonesim
+		local x_arch=x86
+	fi
+
+	if [ ! -r "${IOS_BUILD_DIR}/ios.jam" ]
+	then
+		./bootstrap.sh && write_jamfile
+	fi && \
 	./bjam \
+		-j $MAXJOBS \
 		--user-config="${IOS_BUILD_DIR}/ios.jam" \
-		--prefix="${IOS_DEVICE_PREFIX}" \
-		toolset=darwin-iphone \
-		architecture=arm \
+		--prefix="${PREFIX}" \
+		toolset=darwin-$x_toolset \
+		architecture=$x_arch \
 		target-os=iphone \
 		macosx-version=iphone-${IOS_SDK} \
 		link=static \
 		threading=multi \
-		--layout=system \
-		--variant=release \
-		--without-python \
-		--without-graph \
-		--without-graph_parallel \
-		--without-mpi \
-		--without-wave \
-		--without-program_options \
-		install && \
-	./bjam \
-		--user-config="${IOS_BUILD_DIR}/ios.jam" \
-		--prefix="${IOS_SIMULATOR_PREFIX}" \
-		toolset=darwin-iphonesim \
-		architecture=x86 \
-		target-os=iphone \
-		macosx-version=iphone-${IOS_SDK} \
-		link=static \
-		threading=multi \
+		cflags="${CFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden" \
+		cxxflags="${CFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden" \
+		linkflags="${LDFLAGS}" \
+		define="${x_defs}" \
 		--layout=system \
 		--variant=release \
 		--without-python \

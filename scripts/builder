@@ -4,6 +4,10 @@ if [ -z "${IOS_SOURCED_BUILDER}" ]
 then
 	IOS_SOURCED_BUILDER=1
 
+	#TODO: Activate this and sanitize the rest of the code
+	# To detect if a variable VAR is set: "${VAR+1}" == "1"
+	#set -o nounset
+
 	# Save current dir so we can restore it before exiting
 	IOS_CURRENT_DIR=$(pwd)
 
@@ -25,60 +29,30 @@ then
 	# Create /iOS_SDK_Overlay link if needed
 	# Warning: DO NOT *SOURCE* IT
 	"${IOS_OVERLAY_PATH}/scripts/check-root-link"
+	if [ $? != 0 ]
+	then
+		echo "*** Failed to create symlink"
+		exit 1
+	fi
 
 	# Set the rest of the environment
 	. "${IOS_OVERLAY_PATH}/scripts/set-environment"
 
 	# Load functions
 	. "${IOS_OVERLAY_PATH}/scripts/functions"
+	cat <<-EOT
+	* Installing package [01;32m${IOS_PACKAGE_WITH_VERSION}[00m for [01;32miOS ${IOS_SDK}[00m:
+	         Source: [01;32m${DOWNLOAD_URL}[00m
+	      Build dir: [01;32m${IOS_BUILD_DIR}[00m
+	    Destination: [01;32m${IOS_OVERLAY_PATH}[00m
+	
+	EOT
 
-	echo "* Installing [${IOS_PACKAGE_WITH_VERSION}] for [iOS ${IOS_SDK}]…"
-	echo "    Work directory: ${IOS_BUILD_DIR}"
-	echo "    Downloading [${DOWNLOAD_URL}]…"
-	if [ ! -r "${IOS_DOWNLOAD_LOCATION}" -o ! -z "$IOS_IS_SCM" ]
-	then
-		rm -f "${IOS_DOWNLOAD_LOCATION}" 2>/dev/null
-		if type custom_download_file >/dev/null 2>&1
-		then
-			custom_download_file
-		else
-			ios_download_file
-		fi
-		ios_check_status_fail "### Failed to download ${DOWNLOAD_URL}, exiting…"
-	fi
-
-	if [ -z "$IOS_IS_SCM" ]
-	then
-		echo "    Uncompressing [${ARCHIVE_FILENAME}] into [${IOS_BUILD_DIR}]…"
-		rm -rf "${IOS_BUILD_DIR}" 2>/dev/null
-		mkdir -p "${IOS_BUILD_DIR}" 2>/dev/null
-		if type custom_uncompress >/dev/null 2>&1
-		then
-			custom_uncompress
-		else
-			ios_uncompress
-		fi
-		ios_check_status_fail "### Failed to uncompress ${IOS_DOWNLOAD_LOCATION}, exiting…"
-	fi
-
-	if [ -r "${IOS_PACKAGE_DIR}/${IOS_PACKAGE_WITH_VERSION}.patch" ]
-	then
-		echo "    Patching [${IOS_BUILD_DIR}]…"
-		patch -d "${IOS_BUILD_DIR}" -p1 -i "${IOS_PACKAGE_DIR}/${IOS_PACKAGE_WITH_VERSION}.patch"
-	fi
-	ios_check_status_fail "### Failed to apply patch on [${IOS_BUILD_DIR}], exiting…"
-
-	echo "    Building…"
-	cd "${IOS_BUILD_DIR}"
-
-	if type custom_build >/dev/null 2>&1
-	then
-		custom_build
-		ios_check_status_fail "### Failed to build ${IOS_PACKAGE_WITH_VERSION}, exiting…"
-	else
-		false
-		ios_check_status_fail "### No custom_build() function defined in [${IOS_SELF}], exiting…"
-	fi
+	ios_check_license && \
+	ios_download_file && \
+	ios_uncompress && \
+	ios_autopatch && \
+	ios_build_all
 
 	ios_restore_current_dir
 	echo "    All done!"

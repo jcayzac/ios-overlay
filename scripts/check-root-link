@@ -1,22 +1,17 @@
 #!/bin/bash
 
-if [ $UID == 0 ]
-then
-	# Get the canonical path for our install
-	MYDIR=${0%/*}
-	if [ -z "${MY_DIR}" ]
-	then
-		MY_DIR="."
-	fi
-	cd "${MY_DIR}"
-	MY_DIR=$(pwd)
-	cd $OLDPWD
+function ios_create_master_link() {
+	sudo rm -rf "/iOS_SDK_Overlay" 2>/dev/null
+	sudo ln -sf "${MY_DIR}" "/iOS_SDK_Overlay"
+}
 
-	# Make link in root
-	# FIXME: Should verify that /iOS_SDK_Overlay -> ${MY_DIR} and skip link creation if it's already ok
-	rm -rf "/iOS_SDK_Overlay" 2>/dev/null
-	ln -sf "${MY_DIR}" "/iOS_SDK_Overlay"
-else
-	sudo "$0" $@
-fi
+# Get the canonical path for our install
+MY_DIR=${0%/*}
+MY_DIR=${MY_DIR:-.}
+cd "${MY_DIR}/.."
+MY_DIR=$(pwd)
+cd $OLDPWD
+
+if [ "$MY_DIR" != "$(readlink /iOS_SDK_Overlay)" ]; then ios_create_master_link; exit 0; fi
+if [ "$MY_DIR" != "$(readlink /iOS_SDK_Overlay)" ]; then exit 1; fi
 

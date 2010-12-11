@@ -6,33 +6,21 @@ ARCHIVE_FILENAME="pcre-${VERSION}.tar.bz2"
 DOWNLOAD_URL="http://sourceforge.net/projects/pcre/files/pcre/${VERSION}/${ARCHIVE_FILENAME}/download"
 
 function custom_build() {
-	CXX="${IOS_DEVICE_CXX}" \
-	LD="${IOS_DEVICE_LD}" \
-	CC="${IOS_DEVICE_CC}" \
-	CPP="${IOS_DEVICE_CPP}" \
-	AR="${IOS_DEVICE_AR}" \
+	if [ "$TARGET" == "device" ]
+	then
+		local x_flags="--host=arm-apple-darwin"
+	fi
+	CXX="$CXX" LD="$LD" CC="$CC" CPP="$CPP" AR="$AR" \
 	./configure \
-		--prefix="${IOS_DEVICE_PREFIX}" \
+		--prefix="$PREFIX" \
 		--disable-shared \
 		--enable-utf8 \
-		--host=arm-apple-darwin \
-		CFLAGS="${IOS_DEVICE_PERFORMANCE_CFLAGS}" \
-		CXXFLAGS="${IOS_DEVICE_PERFORMANCE_CFLAGS}" \
-		LDFLAGS="${IOS_DEVICE_LDFLAGS}" \
-	&& make install && \
-	CXX="${IOS_SIMULATOR_CXX}" \
-	LD="${IOS_SIMULATOR_LD}" \
-	CC="${IOS_SIMULATOR_CC}" \
-	CPP="${IOS_SIMULATOR_CPP}" \
-	AR="${IOS_SIMULATOR_AR}" \
-	./configure \
-		--prefix="${IOS_SIMULATOR_PREFIX}" \
-		--disable-shared \
-		--enable-utf8 \
-		CFLAGS="${IOS_SIMULATOR_CFLAGS}" \
-		CXXFLAGS="${IOS_SIMULATOR_CFLAGS}" \
-		LDFLAGS="${IOS_SIMULATOR_LDFLAGS}" \
-	&& make install
+		$x_flags \
+		CFLAGS="$CFLAGS" \
+		CXXFLAGS="$CFLAGS" \
+		LDFLAGS="$LDFLAGS" \
+	&& make -j $MAXJOBS install \
+	&& make -j $MAXJOBS distclean
 }
 
 . "$(dirname "$0")/../../scripts/builder"

@@ -6,44 +6,21 @@ ARCHIVE_FILENAME="FCollada_FREE_${VERSION}.zip"
 DOWNLOAD_URL="${URL}${ARCHIVE_FILENAME}/download"
 #DEPEND="bzip2 boost pcre"
 
-function color_message() {
-	echo -e "[32;1m[${@}][0m"
-}
-
-function cmd() { echo $@; $@; }
-function export_headers() {
+function custom_build() {
+	rm *.o 2>/dev/null
+	find {FCollada,FCollada/FCDocument,FCollada/FMath,FCollada/FUtils,FColladaPlugins/FArchiveXML} \
+	-maxdepth 1 -iname "*.cpp" -print0 | \
+	xargs -0 -t -P 4 -I % \
+		"${CXX}" -c ${CFLAGS} \
+			-DLINUX -DNDEBUG -DRETAIL -DUNICODE \
+			-I/usr/include/libxml2 -I. -IFCollada % && \
+	"${AR}" -r "${PREFIX}/lib/libfcollada.a" *.o && \
 	for DIR in FCollada FCollada/FCDocument FCollada/FMath FCollada/FUtils FColladaPlugins/FArchiveXML
 	do
-		mkdir -p "${PREFIX}/include/$DIR" && cmd cp -v "${DIR}/*.h" "${PREFIX}/include/${DIR}/"
-	done
-}
-function custom_build0() {
-	for FN in FCollada/*.cpp FCollada/FCDocument/*.cpp FCollada/FMath/*.cpp FCollada/FUtils/*.cpp FColladaPlugins/FArchiveXML/*.cpp
-	do
-		echo $FN && \
-		"${CXX}" \
-			-c ${CFLAGS} \
-			-DLINUX \
-			-DNDEBUG \
-			-DRETAIL \
-			-DUNICODE \
-			-I/usr/include/libxml2 \
-			-I. \
-			-IFCollada \
-			"$FN"
+		mkdir -p "${PREFIX}/include/$DIR" && cp -v "${DIR}/*.h" "${PREFIX}/include/${DIR}/"
 	done && \
-	"${AR}" -r "${PREFIX}/lib/libfcollada.a" *.o && \
-	rm *.o && \
 	export_headers
 }
-
-function custom_build() {
-	cd "${IOS_BUILD_DIR}" && \
-	CXX="${IOS_DEVICE_CXX}" CFLAGS="${IOS_DEVICE_PERFORMANCE_CFLAGS}" AR="${IOS_DEVICE_AR}" PREFIX="${IOS_DEVICE_PREFIX}" custom_build0 && \
-	cd "${IOS_BUILD_DIR}" && \
-	CXX="${IOS_SIMULATOR_CXX}" CFLAGS="${IOS_SIMULATOR_CFLAGS}" AR="${IOS_SIMULATOR_AR}" PREFIX="${IOS_SIMULATOR_PREFIX}" custom_build0
-}
-
 
 . "$(dirname "$0")/../../scripts/builder"
 

@@ -4,18 +4,14 @@ VERSION="1.0.0"
 URL="http://ebml.sourceforge.net/"
 ARCHIVE_FILENAME="libebml-${VERSION}.tar.bz2"
 DOWNLOAD_URL="http://dl.matroska.org/downloads/libebml/${ARCHIVE_FILENAME}"
+LICENSE="LGPL"
 
 function custom_build() {
 	cd make/linux && \
-	make \
-		CROSS="${IOS_DEVICE_PLATFORM}/usr/bin/" \
-		CPPFLAGS="${IOS_DEVICE_PERFORMANCE_CFLAGS}" \
-		prefix="${IOS_DEVICE_PREFIX}" install && \
-	make distclean && \
-	make \
-		CROSS="${IOS_SIMULATOR_PLATFORM}/usr/bin/" \
-		CPPFLAGS="${IOS_SIMULATOR_CFLAGS}" \
-		prefix="${IOS_SIMULATOR_PREFIX}" install
+	make -j $MAXJOBS \
+		CROSS="${PLATFORM}/usr/bin/" \
+		CPPFLAGS="${CFLAGS}" \
+		prefix="${PREFIX}" install
 }
 
 . "$(dirname "$0")/../../scripts/builder"

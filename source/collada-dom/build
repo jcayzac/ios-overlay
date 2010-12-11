@@ -10,85 +10,27 @@ function color_message() {
 	echo -e "[32;1m[${@}][0m"
 }
 
+function custom_build0() {
+	local COLLADA_VERSION="$1"
+	color_message "Building Collada $COLLADA_VERSION"
+	rm -f *.o 2>/dev/null
+
+	find {src/dae,src/modules,src/$COLLADA_VERSION} -iname "*.cpp" -print0 | \
+		xargs -0 -t -P 4 -I % \
+		"${CXX}" -c ${CFLAGS} -DCOLLADA${COLLADA_VERSION//./} -DDOM_INCLUDE_LIBXML \
+			-I/usr/include/libxml2 -I${PREFIX}/include/boost -I${PREFIX}/include/minizip \
+			-Iinclude -Iinclude/${COLLADA_VERSION} % && \
+	"${AR}" -r "${PREFIX}/lib/libcollada-dom-${COLLADA_VERSION//./}.a" *.o
+}
+
+
 function custom_build() {
 	cd collada-dom/dom && \
-	rm -f *.o && \
-	color_message "Building Collada 1.4 library for iOS devices" && \
-	find {src/dae,src/modules,src/1.4} \
-		-iname "*.cpp" \
-		-print \
-		-exec "${IOS_DEVICE_CXX}" \
-			-c \
-			${IOS_DEVICE_PERFORMANCE_CFLAGS} \
-			-I/usr/include/libxml2 \
-			-I${IOS_DEVICE_PREFIX}/include/boost \
-			-I${IOS_DEVICE_PREFIX}/include/minizip \
-			-Iinclude \
-			-Iinclude/1.4 \
-			-DCOLLADA14 \
-			-DDOM_INCLUDE_LIBXML \
-		"{}" \; && \
-	"${IOS_DEVICE_AR}" -r libcollada-dom-14.a *.o && \
-	rm -f *.o && \
-	color_message "Building Collada 1.5 library for iOS devices" && \
-	find {src/dae,src/modules,src/1.5} \
-		-iname "*.cpp" \
-		-print \
-		-exec "${IOS_DEVICE_CXX}" \
-			-c \
-			${IOS_DEVICE_PERFORMANCE_CFLAGS} \
-			-I/usr/include/libxml2 \
-			-I${IOS_DEVICE_PREFIX}/include/boost \
-			-I${IOS_DEVICE_PREFIX}/include/minizip \
-			-Iinclude \
-			-Iinclude/1.5 \
-			-DCOLLADA15 \
-			-DDOM_INCLUDE_LIBXML \
-		"{}" \; && \
-	"${IOS_DEVICE_AR}" -r libcollada-dom-15.a *.o && \
-	rm -f *.o && \
-	color_message "Installing headers and static libraries for iOS devices" && \
-	mv libcollada-dom-14.a libcollada-dom-15.a "${IOS_DEVICE_PREFIX}/lib/" && \
-	mkdir -p "${IOS_DEVICE_PREFIX}/include/collada-dom" && \
-	cp -R include/* "${IOS_DEVICE_PREFIX}/include/collada-dom/" && \
-	color_message "Building Collada 1.4 library for iOS simulator" && \
-	find {src/dae,src/modules,src/1.4} \
-		-iname "*.cpp" \
-		-print \
-		-exec "${IOS_SIMULATOR_CXX}" \
-			-c \
-			${IOS_SIMULATOR_CFLAGS} \
-			-I/usr/include/libxml2 \
-			-I${IOS_SIMULATOR_PREFIX}/include/boost \
-			-I${IOS_SIMULATOR_PREFIX}/include/minizip \
-			-Iinclude \
-			-Iinclude/1.4 \
-			-DCOLLADA14 \
-			-DDOM_INCLUDE_LIBXML \
-		"{}" \; && \
-	"${IOS_SIMULATOR_AR}" -r libcollada-dom-14.a *.o && \
-	rm -f *.o && \
-	color_message "Building Collada 1.5 library for iOS simulator" && \
-	find {src/dae,src/modules,src/1.5} \
-		-iname "*.cpp" \
-		-print \
-		-exec "${IOS_SIMULATOR_CXX}" \
-			-c \
-			${IOS_SIMULATOR_CFLAGS} \
-			-I/usr/include/libxml2 \
-			-I${IOS_SIMULATOR_PREFIX}/include/boost \
-			-I${IOS_SIMULATOR_PREFIX}/include/minizip \
-			-Iinclude \
-			-Iinclude/1.5 \
-			-DCOLLADA15 \
-			-DDOM_INCLUDE_LIBXML \
-		"{}" \; && \
-	"${IOS_SIMULATOR_AR}" -r libcollada-dom-15.a *.o && \
-	rm -f *.o && \
-	color_message "Installing headers and static libraries for iOS simulator" && \
-	mv libcollada-dom-14.a libcollada-dom-15.a "${IOS_SIMULATOR_PREFIX}/lib/" && \
-	mkdir -p "${IOS_SIMULATOR_PREFIX}/include/collada-dom" && \
-	cp -R include/* "${IOS_SIMULATOR_PREFIX}/include/collada-dom/"
+	custom_build0 "1.4" && \
+	custom_build0 "1.5" && \
+	color_message "Installing headers" && \
+	mkdir -p "${PREFIX}/include/collada-dom" && \
+	cp -R include/* "${PREFIX}/include/collada-dom/"
 }
 
 . "$(dirname "$0")/../../scripts/builder"

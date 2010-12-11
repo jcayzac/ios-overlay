@@ -29,11 +29,12 @@ then
 	IOS_DEVICE_PLATFORM="/Developer/Platforms/iPhoneOS.platform/Developer"
 	IOS_SIMULATOR_PLATFORM="/Developer/Platforms/iPhoneSimulator.platform/Developer"
 
-	LATEST_SDK=$( find -s "${IOS_DEVICE_PLATFORM}/SDKs" -mindepth 1 -maxdepth 1 | tail -n 1 )
-	LATEST_SDK=${LATEST_SDK##*/iPhoneOS}
-	LATEST_SDK=${LATEST_SDK%*.sdk}
-
-	IOS_SDK="${SDK:-$LATEST_SDK}"
+	# Use the "SDK" envvar if specified,
+	# or the latest available SDK otherwise.
+	IOS_SDK=$( find -s "${IOS_DEVICE_PLATFORM}/SDKs" -mindepth 1 -maxdepth 1 | tail -n 1 )
+	IOS_SDK=${IOS_SDK##*/iPhoneOS}
+	IOS_SDK=${IOS_SDK%*.sdk}
+	IOS_SDK="${SDK:-$IOS_SDK}"
 
 	IOS_DEVICE_SDK="${IOS_DEVICE_PLATFORM}/SDKs/iPhoneOS${IOS_SDK}.sdk"
 	IOS_SIMULATOR_SDK="${IOS_SIMULATOR_PLATFORM}/SDKs/iPhoneSimulator${IOS_SDK}.sdk"
@@ -49,6 +50,7 @@ then
 	LD="${LD:-/usr/bin/ld}"
 	AR="${AR:-/usr/bin/ar}"
 	RANLIB="${RANLIB:-/usr/bin/ranlib}"
+	MAXJOBS="${MAXJOBS:-4}"
 
 	IOS_DEVICE_CC="${IOS_DEVICE_PLATFORM}${CC}"
 	IOS_DEVICE_CXX="${IOS_DEVICE_PLATFORM}${CXX}"
@@ -56,35 +58,13 @@ then
 	IOS_DEVICE_LD="${IOS_DEVICE_PLATFORM}${LD}"
 	IOS_DEVICE_AR="${IOS_DEVICE_PLATFORM}${AR}"
 	IOS_DEVICE_RANLIB="${IOS_DEVICE_PLATFORM}${RANLIB}"
-	IOS_DEVICE_COMMON_FLAGS="\
-		-arch armv7 \
-		-mthumb \
-		-mcpu=cortex-a8 \
-		-mfloat-abi=softfp \
-		-mfpu=neon \
-		--sysroot ${IOS_DEVICE_SDK} \
-	"
-	IOS_DEVICE_CFLAGS="\
-		${IOS_DEVICE_COMMON_FLAGS} \
-		-I${IOS_DEVICE_PREFIX}/include \
-	"
-	IOS_DEVICE_LDFLAGS="\
-		${IOS_DEVICE_COMMON_FLAGS} \
-		-L${IOS_DEVICE_PREFIX}/lib \
-	"
-	IOS_DEVICE_PERFORMANCE_CFLAGS="\
-		${IOS_DEVICE_CFLAGS} \
-		-fstrict-aliasing \
-		-ftree-loop-ivcanon \
-		-fgcse-sm \
-		-fgcse-las \
-		-funsafe-loop-optimizations \
-		-fsee \
-		-fomit-frame-pointer \
-		-O3 \
-		-ffast-math \
-		-ftree-vectorize \
-	"
+	IOS_DEVICE_COMMON_FLAGS="-arch armv7 -mthumb -mcpu=cortex-a8 -mfloat-abi=softfp -mfpu=neon --sysroot ${IOS_DEVICE_SDK}"
+	IOS_DEVICE_CFLAGS="${IOS_DEVICE_COMMON_FLAGS} -I${IOS_DEVICE_PREFIX}/include"
+	IOS_DEVICE_LDFLAGS="${IOS_DEVICE_COMMON_FLAGS} -L${IOS_DEVICE_PREFIX}/lib"
+	IOS_DEVICE_PERFORMANCE_CFLAGS="${IOS_DEVICE_CFLAGS} -fstrict-aliasing -ftree-loop-ivcanon -fgcse-sm -fgcse-las -funsafe-loop-optimizations -fsee -fomit-frame-pointer -O3 -ffast-math -ftree-vectorize"
+
+#Override for now, till I get the config system done
+IOS_DEVICE_CFLAGS="${IOS_DEVICE_PERFORMANCE_CFLAGS}"
 
 	IOS_SIMULATOR_CC="${IOS_SIMULATOR_PLATFORM}${CC}"
 	IOS_SIMULATOR_CXX="${IOS_SIMULATOR_PLATFORM}${CXX}"
@@ -92,18 +72,9 @@ then
 	IOS_SIMULATOR_LD="${IOS_SIMULATOR_PLATFORM}${LD}"
 	IOS_SIMULATOR_AR="${IOS_SIMULATOR_PLATFORM}${AR}"
 	IOS_SIMULATOR_RANLIB="${IOS_SIMULATOR_PLATFORM}${RANLIB}"
-	IOS_SIMULATOR_COMMON_FLAGS="\
-		-arch i386 \
-		--sysroot ${IOS_SIMULATOR_SDK} \
-	"
-	IOS_SIMULATOR_CFLAGS="\
-		${IOS_SIMULATOR_COMMON_FLAGS} \
-		-I${IOS_SIMULATOR_PREFIX}/include \
-	"
-	IOS_SIMULATOR_LDFLAGS="\
-		${IOS_SIMULATOR_COMMON_FLAGS} \
-		-L${IOS_SIMULATOR_PREFIX}/lib \
-	"
+	IOS_SIMULATOR_COMMON_FLAGS="-arch i386 --sysroot ${IOS_SIMULATOR_SDK}"
+	IOS_SIMULATOR_CFLAGS="${IOS_SIMULATOR_COMMON_FLAGS} -I${IOS_SIMULATOR_PREFIX}/include"
+	IOS_SIMULATOR_LDFLAGS="${IOS_SIMULATOR_COMMON_FLAGS} -L${IOS_SIMULATOR_PREFIX}/lib"
 
 	unset SDK CC CXX CPP LD AR RANLIB
 
