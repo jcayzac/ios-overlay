@@ -14,16 +14,18 @@ function color_message() {
 }
 
 function custom_build() {
-	echo "I'm working on this package, hold on! :-)"
-	exit 1
-
 	rm -rf build 2>/dev/null
 	mkdir build && \
 	cd build && \
+	color_message "Compiling source code…" && \
 	find ../src/{LinearMath,BulletCollision,BulletDynamics} -iname "*.cpp" -print0 | \
-		xargs -0 -t -P 4 -I % \
+		xargs -0 -t -P $MAXJOBS -I % \
 		"${CXX}" -c ${CFLAGS} -DNDEBUG -I../src % && \
-	"${AR}" -r "${PREFIX}/lib/libBullet.a" *.o
+	color_message "Creating static library…" && \
+	"${AR}" -rv "${PREFIX}/lib/libBullet.a" *.o && \
+	color_message "Installing header files…" && \
+	cd ../src && \
+	find {.,LinearMath,BulletCollision,BulletDynamics} -iname "*.h" -print0 | cpio -0 -pdmuv "${PREFIX}/include/bullet"
 }
 
 . "$(dirname "$0")/../../scripts/builder"

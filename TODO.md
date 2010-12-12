@@ -20,12 +20,12 @@ Libraries to be added in near future:
 * [TinyVector](http://code.google.com/p/tinyvector/)
 * [TinyXML](http://www.grinninglizard.com/tinyxml/)
 * [OpenCollada](http://code.google.com/p/opencollada/)
-* [Bullet SDK](http://code.google.com/p/bullet/) ([version 2.77](http://bullet.googlecode.com/files/bullet-2.77.tgz))
 * [VectorMathLib](http://code.google.com/p/bullet/)
 * [Dynamica plugin](http://code.google.com/p/dynamica/)
 * [zziblib](http://zziplib.sourceforge.net/)
 * expat
 * OpenCV
 * [FLANN](http://www.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN)
-
+* [OpenKinect](http://openkinect.org/)
+* O3D
 
