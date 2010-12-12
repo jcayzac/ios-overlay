@@ -6,13 +6,9 @@ ARCHIVE_FILENAME="Collada DOM ${VERSION}.zip"
 DOWNLOAD_URL="http://sourceforge.net/projects/collada-dom/files/Collada DOM/Collada DOM ${VERSION}/${ARCHIVE_FILENAME}/download"
 DEPEND="bzip2 boost pcre"
 
-function color_message() {
-	echo -e "[32;1m[${@}][0m"
-}
-
 function custom_build0() {
 	local COLLADA_VERSION="$1"
-	color_message "Building Collada $COLLADA_VERSION"
+	ios_msg "${text_bold}Building Collada $COLLADA_VERSION"
 	rm -f *.o 2>/dev/null
 
 	find {src/dae,src/modules,src/$COLLADA_VERSION} -iname "*.cpp" -print0 | \
@@ -20,7 +16,8 @@ function custom_build0() {
 		"${CXX}" -c ${CFLAGS} -DCOLLADA${COLLADA_VERSION//./} -DDOM_INCLUDE_LIBXML \
 			-I/usr/include/libxml2 -I${PREFIX}/include/boost -I${PREFIX}/include/minizip \
 			-Iinclude -Iinclude/${COLLADA_VERSION} % && \
-	"${AR}" -r "${PREFIX}/lib/libcollada-dom-${COLLADA_VERSION//./}.a" *.o
+	"${AR}" -r "${PREFIX}/lib/libcollada-dom-${COLLADA_VERSION//./}.a" *.o && \
+	ios_sign_library "${PREFIX}/lib/libcollada-dom-${COLLADA_VERSION//./}.a"
 }
 
 
@@ -28,7 +25,7 @@ function custom_build() {
 	cd collada-dom/dom && \
 	custom_build0 "1.4" && \
 	custom_build0 "1.5" && \
-	color_message "Installing headers" && \
+	ios_msg "${text_bold}Installing headers" && \
 	mkdir -p "${PREFIX}/include/collada-dom" && \
 	cp -R include/* "${PREFIX}/include/collada-dom/"
 }

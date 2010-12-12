@@ -19,6 +19,11 @@ function custom_build() {
 		CFLAGS="$CFLAGS" \
 		CXXFLAGS="$CFLAGS" \
 		LDFLAGS="$LDFLAGS" \
+	&& make -j $MAXJOBS \
+	&& for LIB in .libs/*.a
+	do
+		ios_sign_library "$LIB"
+	done \
 	&& make -j $MAXJOBS install \
 	&& make -j $MAXJOBS distclean
 }

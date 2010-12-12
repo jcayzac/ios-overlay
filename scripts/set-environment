@@ -3,12 +3,43 @@
 if [ -z "${IOS_SOURCED_SET_STANDARD_VARS}" ]
 then
 	IOS_SOURCED_SET_STANDARD_VARS=1
+	. "${IOS_OVERLAY_PATH}/scripts/colors"
 
 	# Push all the command line arguments to the environment
 	declare IOS_OVERLAY=1 $@
 
+	# Package info
 	IOS_PACKAGE_NAME=${IOS_PACKAGE_DIR##*/}
 	IOS_PACKAGE_WITH_VERSION="${IOS_PACKAGE_NAME}-$VERSION"
+
+	# Revision
+	IOS_LAST_COMMIT_ID=$(git log -n 1 --pretty='%H')
+	function set_ios_fetch_url() {
+		local OLD_IFS=$IFS
+		local B=
+		local BRANCH=
+		local MASTER_BRANCH=
+		IFS=''
+		while read B
+		do
+			B=${B/#\* /}
+			B=${B/#  /}
+			case $B in
+				origin/master) MASTER_BRANCH=$B; break;;
+				*/master) MASTER_BRANCH=$B;;
+				*) BRANCH=$B;;
+			esac
+		done <<<$(git branch -r --contains $IOS_LAST_COMMIT_ID | grep -v -- '->')
+		IFS=$OLD_IFS
+		if [ ! -z "$MASTER_BRANCH" ]
+		then
+			BRANCH=$MASTER_BRANCH
+		fi
+		if [ ! -z "$BRANCH" ]
+		then
+			IOS_FETCH_URL="$(git config remote.${BRANCH%/*}.url) +refs/heads/${BRANCH#*/}"
+		fi
+	}; set_ios_fetch_url
 
 	if [ -z "${ARCHIVE_FILENAME}" ]
 	then

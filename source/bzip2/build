@@ -15,6 +15,7 @@ function custom_build() {
 		RANLIB="${RANLIB}" \
 		CFLAGS="${CFLAGS} -D_FILE_OFFSET_BITS=64" \
 		LDFLAGS="${LDFLAGS}" && \
+	ios_sign_library "${IOS_BUILD_DIR}/libbz2.a" && \
 	mv "${IOS_BUILD_DIR}/libbz2.a" "${PREFIX}/lib/" && \
 	make clean && \
 	cp "${IOS_BUILD_DIR}/bzlib.h" "${PREFIX}/include/"

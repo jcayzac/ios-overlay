@@ -1,0 +1,44 @@
+#!/bin/bash
+
+if [ -z "${IOS_SOURCED_COLORS}" ]
+then
+	IOS_SOURCED_COLORS=1
+
+	function f() {
+		local esc='['
+		text_reset=${esc}0m
+		text_bold=${esc}1m
+		text_underscore=${esc}4m
+		text_blink=${esc}5m
+		text_reverse=${esc}7m
+		text_concealed=${esc}8m
+
+		local black=0
+		local red=1
+		local green=2
+		local yellow=3
+		local blue=4
+		local magenta=5
+		local cyan=6
+		local white=7
+
+		text_black=${esc}3${black}m
+		text_red=${esc}3${red}m
+		text_green=${esc}3${green}m
+		text_yellow=${esc}3${yellow}m
+		text_blue=${esc}3${blue}m
+		text_magenta=${esc}3${magenta}m
+		text_cyan=${esc}3${cyan}m
+		text_white=${esc}3${white}m
+
+		bg_black=${esc}4${black}m
+		bg_red=${esc}4${red}m
+		bg_green=${esc}4${green}m
+		bg_yellow=${esc}4${yellow}m
+		bg_blue=${esc}4${blue}m
+		bg_magenta=${esc}4${magenta}m
+		bg_cyan=${esc}4${cyan}m
+		bg_white=${esc}4${white}m
+	}; f
+fi
+

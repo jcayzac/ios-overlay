@@ -9,21 +9,18 @@ DEPEND=""
 # TODO: install the vectormath library separately, and use
 # -DUSE_SYSTEM_VECTORMATH
 
-function color_message() {
-	echo -e "[32;1m[${@}][0m"
-}
-
 function custom_build() {
 	rm -rf build 2>/dev/null
 	mkdir build && \
 	cd build && \
-	color_message "Compiling source code…" && \
+	ios_msg "${text_bold}Compiling source code…" && \
 	find ../src/{LinearMath,BulletCollision,BulletDynamics} -iname "*.cpp" -print0 | \
 		xargs -0 -t -P $MAXJOBS -I % \
 		"${CXX}" -c ${CFLAGS} -DNDEBUG -I../src % && \
-	color_message "Creating static library…" && \
+	ios_msg "${text_bold}Creating static library…" && \
 	"${AR}" -rv "${PREFIX}/lib/libBullet.a" *.o && \
-	color_message "Installing header files…" && \
+	ios_sign_library "${PREFIX}/lib/libBullet.a" && \
+	ios_msg "${text_bold}Installing header files…" && \
 	cd ../src && \
 	find {.,LinearMath,BulletCollision,BulletDynamics} -iname "*.h" -print0 | cpio -0 -pdmuv "${PREFIX}/include/bullet"
 }

@@ -11,7 +11,12 @@ function custom_build() {
 	make -j $MAXJOBS \
 		CROSS="${PLATFORM}/usr/bin/" \
 		CPPFLAGS="${CFLAGS}" \
-		prefix="${PREFIX}" install
+		prefix="${PREFIX}" && \
+	ios_sign_library libebml.a && \
+	make -j $MAXJOBS \
+		CROSS="${PLATFORM}/usr/bin/" \
+		CPPFLAGS="${CFLAGS}" \
+		prefix="${PREFIX}" install clean
 }
 
 . "$(dirname "$0")/../../scripts/builder"

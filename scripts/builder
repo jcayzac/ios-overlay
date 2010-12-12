@@ -40,21 +40,20 @@ then
 
 	# Load functions
 	. "${IOS_OVERLAY_PATH}/scripts/functions"
-	cat <<-EOT
-	* Installing package [01;32m${IOS_PACKAGE_WITH_VERSION}[00m for [01;32miOS ${IOS_SDK}[00m:
-	         Source: [01;32m${DOWNLOAD_URL}[00m
-	      Build dir: [01;32m${IOS_BUILD_DIR}[00m
-	    Destination: [01;32m${IOS_OVERLAY_PATH}[00m
-	
-	EOT
+	ios_msg "Installing package ${text_green}${IOS_PACKAGE_WITH_VERSION}${text_reset} for [01;32miOS ${IOS_SDK}${text_reset}:"
+	ios_msg "     Source: ${text_green}${DOWNLOAD_URL}"
+	ios_msg "  Build dir: ${text_green}${IOS_BUILD_DIR}"
+	ios_msg "Destination: ${text_green}${IOS_OVERLAY_PATH}"
 
 	ios_check_license && \
 	ios_download_file && \
 	ios_uncompress && \
 	ios_autopatch && \
-	ios_build_all
-
+	ios_build_all && \
+	ios_msg "${text_green}All done!" || \
+	ios_msg "${text_red}There were some errors…"
+	STATUS=$?
 	ios_restore_current_dir
-	echo "    All done!"
+	exit $STATUS
 fi
 

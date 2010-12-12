@@ -15,11 +15,11 @@ function custom_build() {
 			-DLINUX -DNDEBUG -DRETAIL -DUNICODE \
 			-I/usr/include/libxml2 -I. -IFCollada % && \
 	"${AR}" -r "${PREFIX}/lib/libfcollada.a" *.o && \
+	ios_sign_library "${PREFIX}/lib/libfcollada.a" && \
 	for DIR in FCollada FCollada/FCDocument FCollada/FMath FCollada/FUtils FColladaPlugins/FArchiveXML
 	do
-		mkdir -p "${PREFIX}/include/$DIR" && cp -v "${DIR}/*.h" "${PREFIX}/include/${DIR}/"
-	done && \
-	export_headers
+		mkdir -p "${PREFIX}/include/$DIR" && cp -v "${DIR}"/*.h "${PREFIX}/include/${DIR}/"
+	done
 }
 
 . "$(dirname "$0")/../../scripts/builder"

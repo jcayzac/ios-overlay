@@ -27,7 +27,7 @@ function custom_build() {
 	then
 		local x_toolset=iphone
 		local x_arch=arm
-		local x_defs="_LITTLE_ENDIAN"
+		local x_defs="-D_LITTLE_ENDIAN"
 	else
 		local x_toolset=iphonesim
 		local x_arch=x86
@@ -47,10 +47,9 @@ function custom_build() {
 		macosx-version=iphone-${IOS_SDK} \
 		link=static \
 		threading=multi \
-		cflags="${CFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden" \
-		cxxflags="${CFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden" \
+		cflags="${CFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden $x_defs" \
+		cxxflags="${CFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden $x_defs" \
 		linkflags="${LDFLAGS}" \
-		define="${x_defs}" \
 		--layout=system \
 		--variant=release \
 		--without-python \
@@ -59,7 +58,12 @@ function custom_build() {
 		--without-mpi \
 		--without-wave \
 		--without-program_options \
-		install
+		install && \
+	find "${PREFIX}/lib" -iname "boost_*.a" -print0 >.librairies_to_sign && \
+	while IFS= read -r -d $'\0' LIB
+	do
+		ios_sign_library "$LIB"
+	done <.librairies_to_sign
 }
 
 . "$(dirname "$0")/../../scripts/builder"

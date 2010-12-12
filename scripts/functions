@@ -4,12 +4,16 @@ if [ -z "${IOS_SOURCED_FUNCTIONS}" ]
 then
 	IOS_SOURCED_FUNCTIONS=1
 
+	function ios_msg() {
+		echo $@ ${text_reset}
+	}
+
 	function ios_restore_current_dir() {
 		cd "${IOS_CURRENT_DIR}"
 	}
 
 	function ios_exit_with_msg() {
-		echo -e $@
+		ios_msg ${text_bold}${text_red}ERROR: ${text_reset}$@
 		ios_restore_current_dir
 		exit 1
 	}
@@ -20,12 +24,7 @@ then
 		LGPL)
 			if [ -z "${LGPL+defined}" ]
 			then
-				cat <<-EOT
-					$IOS_PACKAGE_WITH_VERSION is LGPL, which means it cannot be statically linked.
-					
-					To build it anyway, add "LGPL" to your command line parameters.
-				EOT
-				exit 1
+				ios_exit_with_msg "${text_bold}${IOS_PACKAGE_WITH_VERSION}${text_reset} is LGPL, which means it cannot be statically linked. To build it anyway, add \"${text_bold}LGPL${text_reset}\" to your command line parameters."
 			fi
 			;;
 		*) true
@@ -33,10 +32,42 @@ then
 		esac
 	}
 
+	function ios_sign_library() {
+		local x_lib_path="$1"; shift
+		local ifs=$IFS
+		local x_sig=(
+			"PACKAGE=${IOS_PACKAGE_WITH_VERSION}"
+			"COMMIT_ID=${IOS_LAST_COMMIT_ID}"
+			"BUILD_DATE=\"$(date)\""
+			"FETCH_URL=\"${IOS_FETCH_URL:-local}\""
+		)
+		
+		echo  >__ios_signature.c 'extern const char* const __ios_signature'$$';' && \
+		echo >>__ios_signature.c 'const char* const __ios_signature'$$'="\n'"\\" && \
+		echo >>__ios_signature.c '# BEGIN IOS SDK OVERLAY SIGNATURE\n'"\\"       && \
+		for x in ${!x_sig[@]}
+		do
+			local x_prop=${x_sig[$x]}
+			x_prop=${x_prop//\\/\\\\}
+			x_prop=${x_prop//\"/\\\"}
+			echo >>__ios_signature.c ${x_prop}'\n'"\\"
+		done && \
+		echo >>__ios_signature.c '\n# END IOS SDK OVERLAY SIGNATURE\n";'         && \
+		ios_msg "${text_green}Signing [${text_reset}$x_lib_path${text_green}] with the following signature:"  && \
+		for x in ${!x_sig[@]}; do echo ==${text_bold}${x_sig[$x]}${text_reset}==; done && \
+		${CC} -c ${CFLAGS} __ios_signature.c && \
+		ar -r "$x_lib_path" __ios_signature.o || \
+		ios_exit_with_msg "Failed to sign library ${text_bold}$x_lib_path"
+		local s=$?
+		IFS=$ifs
+		return $s
+	}
+
 	function ios_download_file() {
 		if [ ! -r "${IOS_DOWNLOAD_LOCATION}" -o ! -z "$IOS_IS_SCM" ]
 		then
 			rm -f "${IOS_DOWNLOAD_LOCATION}" 2>/dev/null
+			ios_msg "${text_green}Downloading [${text_reset}${ARCHIVE_FILENAME}${text_green}]…"
 			if type custom_download_file >/dev/null 2>&1
 			then
 				SPECIAL_SCHEME="${IOS_DOWNLOAD_URL%%|*}" SPECIAL_LOCATION="${IOS_DOWNLOAD_URL#*|}" custom_download_file
@@ -50,13 +81,13 @@ then
 					;;
 				esac
 			fi
-		fi || ios_exit_with_msg "### Failed to download ${DOWNLOAD_URL}, exiting…"
+		fi || ios_exit_with_msg "Failed to download ${text_bold}${DOWNLOAD_URL}"
 	}
 
 	function ios_uncompress() {
 		if [ -z "$IOS_IS_SCM" ]
 		then
-			echo "    Uncompressing [${ARCHIVE_FILENAME}] into [${IOS_BUILD_DIR}]…"
+			ios_msg "${text_green}Uncompressing [${text_reset}${ARCHIVE_FILENAME}${text_green}] into [${text_reset}${IOS_BUILD_DIR}${text_green}]…"
 			rm -rf "${IOS_BUILD_DIR}" 2>/dev/null
 			mkdir -p "${IOS_BUILD_DIR}" 2>/dev/null && \
 			if type custom_uncompress >/dev/null 2>&1
@@ -76,25 +107,24 @@ then
 					unzip "${IOS_DOWNLOAD_LOCATION}" -d "${IOS_BUILD_DIR}"
 					;;
 				*)
-					echo "Error: Unknown archive type"
-					false
+					ios_exit_with_msg "Unknown archive type"
 					;;
 				esac
 			fi
-		fi || ios_exit_with_msg "### Failed to uncompress ${IOS_DOWNLOAD_LOCATION}, exiting…"
+		fi || ios_exit_with_msg "Failed to uncompress ${IOS_DOWNLOAD_LOCATION}"
 	}
 
 	function ios_autopatch() {
-		# TODO: Add multiple patch ability
-		if [ -r "${IOS_PACKAGE_DIR}/${IOS_PACKAGE_WITH_VERSION}.patch" ]
-		then
-			echo "    Patching [${IOS_BUILD_DIR}]…"
-			patch -d "${IOS_BUILD_DIR}" -p1 -i "${IOS_PACKAGE_DIR}/${IOS_PACKAGE_WITH_VERSION}.patch"
-		fi || ios_exit_with_msg "### Failed to apply patch on [${IOS_BUILD_DIR}], exiting…"
+		find -s "${IOS_PACKAGE_DIR}" -maxdepth 1 -iname "${IOS_PACKAGE_WITH_VERSION}*.patch" -print0 >"${IOS_BUILD_DIR}/__ios_patches"
+		while read -r -d $'\0' PATCH
+		do
+			ios_msg "${text_green}Applying [${text_reset}${PATCH##*/}${text_green}]…" && \
+			patch -d "${IOS_BUILD_DIR}" -p1 -i "${PATCH}" || \
+			ios_exit_with_msg "Failed to apply ${text_bold}${PATCH##*/}"
+		done <"${IOS_BUILD_DIR}/__ios_patches" || ios_exit_with_msg "Failed to apply some patches"
 	}
 
 	function ios_build_all() {
-		echo "    Building…"
 		if type custom_build >/dev/null 2>&1
 		then
 			for platform in device simulator
@@ -112,8 +142,6 @@ then
 				local x_prefix="IOS_${x_platform}_PREFIX"
 				local x_platform="IOS_${x_platform}_PLATFORM"
 
-				cd "${IOS_BUILD_DIR}"
-
 				SDK_DIR="${!x_sdk_dir}"
 				CC="${!x_cc}"
 				CXX="${!x_cxx}"
@@ -127,9 +155,12 @@ then
 				PLATFORM="${!x_platform}"
 				TARGET=$platform
 
-				custom_build
+				ios_msg "${text_green}Building [${text_reset}${IOS_PACKAGE_WITH_VERSION}${text_green}] for [${text_reset}${platform}${text_green}]" && \
+				cd "${IOS_BUILD_DIR}" && \
+				custom_build || \
+				ios_exit_with_msg "Failed to build ${text_bold}${IOS_PACKAGE_WITH_VERSION}${text_reset} for ${text_bold}${platform}"
 
-			done || ios_exit_with_msg "### Failed to build ${IOS_PACKAGE_WITH_VERSION}, exiting…"
+			done || ios_exit_with_msg "Failed to build some packages"
 		fi
 	}
 fi
