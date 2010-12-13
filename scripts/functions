@@ -38,7 +38,6 @@ then
 		local x_sig=(
 			"PACKAGE=${IOS_PACKAGE_WITH_VERSION}"
 			"COMMIT_ID=${IOS_LAST_COMMIT_ID}"
-			"BUILD_DATE=\"$(date)\""
 			"FETCH_URL=\"${IOS_FETCH_URL:-local}\""
 		)
 		
