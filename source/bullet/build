@@ -18,8 +18,8 @@ function custom_build() {
 		xargs -0 -t -P $MAXJOBS -I % \
 		"${CXX}" -c ${CFLAGS} -DNDEBUG -I../src % && \
 	ios_msg "${text_bold}Creating static library…" && \
-	"${AR}" -rv "${PREFIX}/lib/libBullet.a" *.o && \
-	ios_sign_library "${PREFIX}/lib/libBullet.a" && \
+	"${AR}" -rv "${PREFIX}/lib/libbullet.a" *.o && \
+	ios_sign_library "${PREFIX}/lib/libbullet.a" && \
 	ios_msg "${text_bold}Installing header files…" && \
 	cd ../src && \
 	find {.,LinearMath,BulletCollision,BulletDynamics} -iname "*.h" -print0 | cpio -0 -pdmuv "${PREFIX}/include/bullet"
