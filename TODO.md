@@ -17,6 +17,7 @@ Libraries to be added in near future:
 * [libtxc_dxtn](http://homepage.hispeed.ch/rscheidegger/dri_experimental/s3tc_index.html) (remove divisions and decode pixel blocks + use std types rather than GL types)
 * [DevIL](http://openil.sourceforge.net/)? (a.k.a. OpenIL) But it's LGPL…
 * [Tremor](http://wiki.xiph.org/Tremor), or rather my ARM-optimized version.
+    * Maybe merge my changes with RockBox's version at <code>svn://svn.rockbox.org/rockbox/trunk</code> ?
 * [TinyVector](http://code.google.com/p/tinyvector/)
 * [TinyXML](http://www.grinninglizard.com/tinyxml/)
 * [OpenCollada](http://code.google.com/p/opencollada/)
