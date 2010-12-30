@@ -1,0 +1,38 @@
+#!/bin/bash
+
+VERSION="2.4.4"
+URL="http://www.freetype.org/"
+ARCHIVE_FILENAME="freetype-${VERSION}.tar.bz2"
+DOWNLOAD_URL="http://sourceforge.net/projects/freetype/files/freetype2/${VERSION}/${ARCHIVE_FILENAME}/download"
+
+function custom_build() {
+	if [ "$TARGET" == "device" ]
+	then
+		local x_flags="--host=arm-apple-darwin"
+	fi
+	CXX="$CXX" LD="$LD" CC="$CC" CPP="$CPP" AR="$AR" \
+	./configure \
+		--prefix="$PREFIX" \
+		--disable-shared \
+		--without-quickdraw-toolbox \
+		--without-quickdraw-carbon \
+		--without-ats \
+		--without-old-mac-fonts \
+		--without-fsspec \
+		--without-fsref \
+		$x_flags \
+		CFLAGS="$CFLAGS -DDARWIN_NO_CARBON -DFT2_BUILD_LIBRARY" \
+		CXXFLAGS="$CFLAGS" \
+		LDFLAGS="$LDFLAGS" \
+		RANLIB="$RANLIB" \
+	&& make -j $MAXJOBS \
+	&& for LIB in objs/.libs/*.a
+	do
+		ios_sign_library "$LIB"
+	done \
+	&& make -j $MAXJOBS install \
+	&& make -j $MAXJOBS distclean
+}
+
+. "$(dirname "$0")/../../scripts/builder"
+
