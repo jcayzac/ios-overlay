@@ -1,0 +1,35 @@
+#!/bin/bash
+
+VERSION="1.0.0c"
+URL="http://www.openssl.org/"
+ARCHIVE_FILENAME="openssl-${VERSION}.tar.gz"
+DOWNLOAD_URL="http://www.openssl.org/source/${ARCHIVE_FILENAME}"
+
+function custom_build() {
+	local x_unistd="$(pwd)/ios-stdint.h"
+	cat >"$x_unistd" <<-EOT
+	#ifndef INC_$$
+		#define INC_$$
+		#ifdef __ARM_NEON__
+			#include <arm/signal.h>
+			#include <stdint.h>
+		#else
+			#include <stdint.h>
+		#endif
+	#endif
+	EOT
+
+	(exit $?) && \
+	make -j $MAXJOBS clean && \
+	make -j $MAXJOBS \
+	AR="$AR -r" \
+	CC="$CC" \
+	RANLIB="$RANLIB" \
+	INSTALLTOP="${PREFIX}" \
+	OPENSSLDIR="${PREFIX}" \
+	CFLAG="$CFLAGS -pthread -D_THREAD_SAFE -D_REENTRANT -D_DARWIN_C_SOURCE -DTERMIOS -DOPENSSL_UNISTD='\"$(pwd)/ios-stdint.h\"'" \
+	DIRS="crypto ssl engines" install
+}
+
+. "$(dirname "$0")/../../scripts/builder"
+
