@@ -19,6 +19,7 @@ function custom_build() {
 		CFLAGS="$CFLAGS" \
 		CXXFLAGS="$CFLAGS" \
 		LDFLAGS="$LDFLAGS" \
+		RANLIB="$RANLIB" \
 	&& make -j $MAXJOBS \
 	&& for LIB in .libs/*.a
 	do
