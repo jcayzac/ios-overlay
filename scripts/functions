@@ -40,7 +40,7 @@ then
 			"COMMIT_ID=${IOS_LAST_COMMIT_ID}"
 			"FETCH_URL=\"${IOS_FETCH_URL:-local}\""
 		)
-		
+
 		echo  >__ios_signature.c 'extern const char* const __ios_signature'$$';' && \
 		echo >>__ios_signature.c 'const char* const __ios_signature'$$'="\n'"\\" && \
 		echo >>__ios_signature.c '# BEGIN IOS SDK OVERLAY SIGNATURE\n'"\\"       && \
@@ -53,7 +53,7 @@ then
 		done && \
 		echo >>__ios_signature.c '\n# END IOS SDK OVERLAY SIGNATURE\n";'         && \
 		ios_msg "${text_green}Signing [${text_reset}$x_lib_path${text_green}] with the following signature:"  && \
-		for x in ${!x_sig[@]}; do echo ==${text_bold}${x_sig[$x]}${text_reset}==; done && \
+		for x in ${!x_sig[@]}; do echo ${text_bold}${x_sig[$x]}${text_reset}; done && \
 		${CC} -c ${CFLAGS} __ios_signature.c && \
 		ar -r "$x_lib_path" __ios_signature.o || \
 		ios_exit_with_msg "Failed to sign library ${text_bold}$x_lib_path"
@@ -124,6 +124,7 @@ then
 	}
 
 	function ios_build_all() {
+		local PATH0=$PATH
 		if type custom_build >/dev/null 2>&1
 		then
 			for platform in device simulator
@@ -140,6 +141,9 @@ then
 				local x_ldflags="IOS_${x_platform}_LDFLAGS"
 				local x_prefix="IOS_${x_platform}_PREFIX"
 				local x_platform="IOS_${x_platform}_PLATFORM"
+
+				local PATH="$x_platform/usr/bin:/Developer/usr/bin:$PATH0"
+				export PATH
 
 				SDK_DIR="${!x_sdk_dir}"
 				CC="${!x_cc}"
