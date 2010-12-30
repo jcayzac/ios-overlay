@@ -1,0 +1,32 @@
+#!/bin/bash
+
+VERSION="1.4.5"
+URL="http://www.libpng.org/"
+ARCHIVE_FILENAME="libpng-${VERSION}.tar.gz"
+DOWNLOAD_URL="http://prdownloads.sourceforge.net/libpng/${ARCHIVE_FILENAME}?download"
+
+function custom_build() {
+	if [ "$TARGET" == "device" ]
+	then
+		local x_flags="--host=arm-apple-darwin"
+	fi
+	CXX="$CXX" LD="$LD" CC="$CC" CPP="$CPP" AR="$AR" \
+	./configure \
+		--prefix="$PREFIX" \
+		--disable-shared \
+		$x_flags \
+		CFLAGS="$CFLAGS" \
+		CXXFLAGS="$CFLAGS" \
+		LDFLAGS="$LDFLAGS" \
+		RANLIB="$RANLIB" \
+	&& make -j $MAXJOBS \
+	&& for LIB in .libs/*.a
+	do
+		ios_sign_library "$LIB"
+	done \
+	&& make -j $MAXJOBS install \
+	&& make -j $MAXJOBS distclean
+}
+
+. "$(dirname "$0")/../../scripts/builder"
+
