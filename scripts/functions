@@ -69,11 +69,11 @@ then
 			ios_msg "${text_green}Downloading [${text_reset}${ARCHIVE_FILENAME}${text_green}]…"
 			if type custom_download_file >/dev/null 2>&1
 			then
-				SPECIAL_SCHEME="${IOS_DOWNLOAD_URL%%|*}" SPECIAL_LOCATION="${IOS_DOWNLOAD_URL#*|}" custom_download_file
+				SPECIAL_SCHEME="${DOWNLOAD_URL%%|*}" SPECIAL_LOCATION="${DOWNLOAD_URL#*|}" custom_download_file
 			else
-				case "${IOS_DOWNLOAD_URL%%|*}" in
+				case "${DOWNLOAD_URL%%|*}" in
 				svn)
-					svn checkout "${IOS_DOWNLOAD_URL#*|}" "${IOS_BUILD_DIR}"
+					svn checkout "${DOWNLOAD_URL#*|}" "${IOS_BUILD_DIR}"
 					;;
 				*)
 					wget -ct0 "$DOWNLOAD_URL" -O "${IOS_DOWNLOAD_LOCATION}"
