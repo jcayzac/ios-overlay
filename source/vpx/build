@@ -1,0 +1,32 @@
+#!/bin/bash
+
+VERSION="0.9.5"
+URL="http://www.webmproject.org/"
+ARCHIVE_FILENAME="libvpx-v${VERSION}.tar.bz2"
+DOWNLOAD_URL="http://webm.googlecode.com/files/${ARCHIVE_FILENAME}"
+
+function custom_build() {
+	if [ "$TARGET" == "simulator" ]
+	then
+		echo "VPX can't be built for the simulator at this point."
+		return 0
+	fi
+
+	local SDK_VERSION="$IOS_SDK" \
+	&& export SDK_VERSION \
+	&& ./configure \
+		--target=armv7-darwin-gcc \
+		--disable-install-docs \
+		--disable-install-bins \
+		--disable-examples \
+		--enable-vp8 \
+		--enable-arm-asm-detok \
+		--enable-postproc \
+		--prefix="$PREFIX" \
+	&& make -j $MAXJOBS \
+	&& make -j $MAXJOBS clean \
+	&& ios_sign_library "$PREFIX/lib/libvpx.a"
+}
+
+. "$(dirname "$0")/../../scripts/builder"
+

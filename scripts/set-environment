@@ -66,6 +66,7 @@ then
 	IOS_SDK=${IOS_SDK##*/iPhoneOS}
 	IOS_SDK=${IOS_SDK%*.sdk}
 	IOS_SDK="${SDK:-$IOS_SDK}"
+	export IOS_SDK
 
 	IOS_DEVICE_SDK="${IOS_DEVICE_PLATFORM}/SDKs/iPhoneOS${IOS_SDK}.sdk"
 	IOS_SIMULATOR_SDK="${IOS_SIMULATOR_PLATFORM}/SDKs/iPhoneSimulator${IOS_SDK}.sdk"

@@ -1,0 +1,38 @@
+diff -rupN vpx-0.9.5.orig/build/make/configure.sh vpx-0.9.5/build/make/configure.sh
+--- vpx-0.9.5.orig/build/make/configure.sh	2010-10-28 22:14:14.000000000 +0900
++++ vpx-0.9.5/build/make/configure.sh	2010-12-31 16:16:18.000000000 +0900
+@@ -686,10 +686,15 @@ process_common_toolchain() {
+         case ${tgt_os} in
+         darwin*)
+             SDK_PATH=/Developer/Platforms/iPhoneOS.platform/Developer
++            SDK_VERSION0=$( find -s "${SDK_PATH}/SDKs" -mindepth 1 -maxdepth 1 | tail -n 1 )
++            SDK_VERSION0=${SDK_VERSION0##*/iPhoneOS}
++            SDK_VERSION0=${SDK_VERSION0%*.sdk}
++            SDK_VERSION0="${SDK_VERSION0:-4.2}"
++            SDK_VERSION="${SDK_VERSION:-$SDK_VERSION0}"
+             TOOLCHAIN_PATH=${SDK_PATH}/usr/bin
+             CC=${TOOLCHAIN_PATH}/gcc
+             AR=${TOOLCHAIN_PATH}/ar
+-            LD=${TOOLCHAIN_PATH}/arm-apple-darwin9-gcc-4.2.1
++            LD=true
+             AS=${TOOLCHAIN_PATH}/as
+             STRIP=${TOOLCHAIN_PATH}/strip
+             NM=${TOOLCHAIN_PATH}/nm
+@@ -703,14 +708,14 @@ process_common_toolchain() {
+             add_cflags -arch ${tgt_isa}
+             add_ldflags -arch_only ${tgt_isa}
+ 
+-            add_cflags  "-isysroot /Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS3.1.sdk"
++            add_cflags  "-isysroot /Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS${SDK_VERSION}.sdk"
+ 
+             # This should be overridable
+-            alt_libc=${SDK_PATH}/SDKs/iPhoneOS3.1.sdk
++            alt_libc=${SDK_PATH}/SDKs/iPhoneOS${SDK_VERSION}.sdk
+ 
+             # Add the paths for the alternate libc
+ #            for d in usr/include usr/include/gcc/darwin/4.0/; do
+-            for d in usr/include usr/include/gcc/darwin/4.0/ usr/lib/gcc/arm-apple-darwin9/4.0.1/include/; do
++            for d in usr/include usr/include/gcc/darwin/default; do
+                 try_dir="${alt_libc}/${d}"
+                 [ -d "${try_dir}" ] && add_cflags -I"${try_dir}"
+             done
