@@ -18,6 +18,7 @@ Libraries to be added in near future:
 * [DevIL](http://openil.sourceforge.net/)? (a.k.a. OpenIL) But it's LGPL…
 * [Tremor](http://wiki.xiph.org/Tremor), or rather my ARM-optimized version.
     * Maybe merge my changes with RockBox's version at <code>svn://svn.rockbox.org/rockbox/trunk</code> ?
+* [TheorARM](http://wss.co.uk/pinknoise/theorarm/)
 * [TinyVector](http://code.google.com/p/tinyvector/)
 * [TinyXML](http://www.grinninglizard.com/tinyxml/)
 * [OpenCollada](http://code.google.com/p/opencollada/)
@@ -29,4 +30,5 @@ Libraries to be added in near future:
 * [FLANN](http://www.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN)
 * [OpenKinect](http://openkinect.org/)
 * O3D
+
 
