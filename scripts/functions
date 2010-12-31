@@ -73,7 +73,12 @@ then
 			else
 				case "${DOWNLOAD_URL%%|*}" in
 				svn)
+					rm -rf "${IOS_BUILD_DIR}" >/dev/null 2>&1 || true
 					svn checkout "${DOWNLOAD_URL#*|}" "${IOS_BUILD_DIR}"
+					;;
+				git)
+					rm -rf "${IOS_BUILD_DIR}" >/dev/null 2>&1 || true
+					git clone "${DOWNLOAD_URL#*|}" "${IOS_BUILD_DIR}"
 					;;
 				*)
 					wget -ct0 "$DOWNLOAD_URL" -O "${IOS_DOWNLOAD_LOCATION}"
