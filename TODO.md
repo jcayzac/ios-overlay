@@ -12,10 +12,10 @@ Do we want them? Some library could have automatically generated public headers 
 ##Future
 Libraries to be added in near future:
 
-* libpng
 * ICU
+* [FreeImage](http://freeimage.sourceforge.net/): depends on LibTIFF, LibJPEG, LibPNG, LibMNG, ZLib, OpenEXR, OpenJPEG and LibRaw-Lite.
+* [Object-oriented Input System](http://sourceforge.net/projects/wgois/reviews/)
 * [libtxc_dxtn](http://homepage.hispeed.ch/rscheidegger/dri_experimental/s3tc_index.html) (remove divisions and decode pixel blocks + use std types rather than GL types)
-* [DevIL](http://openil.sourceforge.net/)? (a.k.a. OpenIL) But it's LGPL…
 * [Tremor](http://wiki.xiph.org/Tremor), or rather my ARM-optimized version.
     * Maybe merge my changes with RockBox's version at <code>svn://svn.rockbox.org/rockbox/trunk</code> ?
 * [TheorARM](http://wss.co.uk/pinknoise/theorarm/)
@@ -24,7 +24,6 @@ Libraries to be added in near future:
 * [OpenCollada](http://code.google.com/p/opencollada/)
 * [VectorMathLib](http://code.google.com/p/bullet/)
 * [Dynamica plugin](http://code.google.com/p/dynamica/)
-* [zziblib](http://zziplib.sourceforge.net/)
 * expat
 * OpenCV
 * [FLANN](http://www.cs.ubc.ca/~mariusm/index.php/FLANN/FLANN)
