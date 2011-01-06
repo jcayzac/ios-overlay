@@ -10,7 +10,7 @@ function custom_build() {
 	cat >"$x_unistd" <<-EOT
 	#ifndef INC_$$
 		#define INC_$$
-		#ifdef __ARM_NEON__
+		#ifdef __arm__
 			#include <arm/signal.h>
 			#include <stdint.h>
 		#else

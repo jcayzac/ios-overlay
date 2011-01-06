@@ -9,13 +9,13 @@ LICENSE="LGPL"
 function custom_build() {
 	cd make/linux && \
 	make -j $MAXJOBS \
-		CROSS="${PLATFORM}/usr/bin/" \
-		CPPFLAGS="${CFLAGS}" \
+		CROSS="${PLATFORM}/Developer/usr/bin/" \
+		CPPFLAGS="${CPPFLAGS}" \
 		prefix="${PREFIX}" && \
 	ios_sign_library libebml.a && \
 	make -j $MAXJOBS \
-		CROSS="${PLATFORM}/usr/bin/" \
-		CPPFLAGS="${CFLAGS}" \
+		CROSS="${PLATFORM}/Developer/usr/bin/" \
+		CPPFLAGS="${CPPFLAGS}" \
 		prefix="${PREFIX}" install clean
 }
 

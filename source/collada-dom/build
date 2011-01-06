@@ -13,7 +13,7 @@ function custom_build0() {
 
 	find {src/dae,src/modules,src/$COLLADA_VERSION} -iname "*.cpp" -print0 | \
 		xargs -0 -t -P 4 -I % \
-		"${CXX}" -c ${CFLAGS} -DCOLLADA${COLLADA_VERSION//./} -DDOM_INCLUDE_LIBXML \
+		"${CXX}" -c ${CXXFLAGS} -DCOLLADA${COLLADA_VERSION//./} -DDOM_INCLUDE_LIBXML \
 			-I/usr/include/libxml2 -I${PREFIX}/include/boost -I${PREFIX}/include/minizip \
 			-Iinclude -Iinclude/${COLLADA_VERSION} % && \
 	"${AR}" -r "${PREFIX}/lib/libcollada-dom-${COLLADA_VERSION//./}.a" *.o && \

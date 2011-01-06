@@ -6,19 +6,7 @@ ARCHIVE_FILENAME="libpng-${VERSION}.tar.gz"
 DOWNLOAD_URL="http://prdownloads.sourceforge.net/libpng/${ARCHIVE_FILENAME}?download"
 
 function custom_build() {
-	if [ "$TARGET" == "device" ]
-	then
-		local x_flags="--host=arm-apple-darwin"
-	fi
-	CXX="$CXX" LD="$LD" CC="$CC" CPP="$CPP" AR="$AR" \
-	./configure \
-		--prefix="$PREFIX" \
-		--disable-shared \
-		$x_flags \
-		CFLAGS="$CFLAGS" \
-		CXXFLAGS="$CFLAGS" \
-		LDFLAGS="$LDFLAGS" \
-		RANLIB="$RANLIB" \
+	$XCONF \
 	&& make -j $MAXJOBS \
 	&& for LIB in .libs/*.a
 	do

@@ -9,13 +9,13 @@ DEPEND="bzip2"
 function write_jamfile() {
 	cat >"${IOS_BUILD_DIR}/ios.jam" <<EOT
 using darwin : iphone
-	: ${IOS_DEVICE_CC}
+	: ${CC}
 	: <striper>
 	: <architecture>arm <target-os>iphone
 ;
 
 using darwin : iphonesim
-	: ${IOS_SIMULATOR_CC}
+	: ${CC}
 	: <striper>
 	: <architecture>x86 <target-os>iphone
 ;
@@ -23,7 +23,7 @@ EOT
 }
 
 function custom_build() {
-	if [ "$TARGET" == "device" ]
+	if [ "$SDK" == "iphoneos" ]
 	then
 		local x_toolset=iphone
 		local x_arch=arm
@@ -44,7 +44,7 @@ function custom_build() {
 		toolset=darwin-$x_toolset \
 		architecture=$x_arch \
 		target-os=iphone \
-		macosx-version=iphone-${IOS_SDK} \
+		macosx-version=iphone-${SDKVER} \
 		link=static \
 		threading=multi \
 		cflags="${CFLAGS} -fvisibility=hidden -fvisibility-inlines-hidden $x_defs" \

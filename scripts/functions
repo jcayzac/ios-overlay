@@ -129,44 +129,73 @@ then
 	}
 
 	function ios_build_all() {
-		local PATH0=$PATH
+		local PATH0="$PATH" \
+		unset CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH OBJC_INCLUDE_PATH LIBS DYLD_FALLBACK_LIBRARY_PATH DYLD_FALLBACK_FRAMEWORK_PATH
 		if type custom_build >/dev/null 2>&1
 		then
-			for platform in device simulator
+			for SDK in iphoneos iphonesimulator
 			do
-				local x_platform=$(echo $platform | tr '[:lower:]' '[:upper:]')
-				local x_sdk_dir="IOS_${x_platform}_SDK"
-				local x_cc="IOS_${x_platform}_CC"
-				local x_cxx="IOS_${x_platform}_CXX"
-				local x_cpp="IOS_${x_platform}_CPP"
-				local x_ld="IOS_${x_platform}_LD"
-				local x_ar="IOS_${x_platform}_AR"
-				local x_ranlib="IOS_${x_platform}_RANLIB"
-				local x_cflags="IOS_${x_platform}_CFLAGS"
-				local x_ldflags="IOS_${x_platform}_LDFLAGS"
-				local x_prefix="IOS_${x_platform}_PREFIX"
-				local x_platform="IOS_${x_platform}_PLATFORM"
+				local PLATFORM=$(xcodebuild -version -sdk $SDK PlatformPath 2>/dev/null)
+				local SYSROOT=$(xcodebuild -version -sdk $SDK Path 2>/dev/null)
+				local SDKVER=$(xcodebuild -version -sdk $SDK ProductVersion 2>/dev/null)
+				if [ -z "$PLATFORM" ] || [ -z "$SYSROOT" ] || [ -z "$SDKVER" ]
+				then
+					echo $PLATFORM
+					echo $SYSROOT
+					echo $SDKVER
+					ios_exit_with_msg "Cannot find SDK: $SDK"
+				fi
+				local PATH="${PLATFORM}/Developer/usr/bin:/Developer/usr/bin:$PATH0"
+				local PREFIX="$IOS_OVERLAY_PATH/overlay$SYSROOT/usr"
+				local PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig":"$SYSROOT/usr/lib/pkgconfig"
+				local PKG_CONFIG_LIBDIR="$PKG_CONFIG_PATH"
+				local AS="$PLATFORM/Developer/usr/bin/as"
+				local ASCPP="$AS"
+				local AR="$PLATFORM/Developer/usr/bin/ar"
+				local RANLIB="$PLATFORM/Developer/usr/bin/ranlib"
 
-				local PATH="$x_platform/usr/bin:/Developer/usr/bin:$PATH0"
-				export PATH
+				local GCC_VERSION=$($PLATFORM/Developer/usr/bin/gcc --version)
+				GCC_VERSION=${GCC_VERSION%% *}
+				GCC_VERSION=${GCC_VERSION##*-}
 
-				SDK_DIR="${!x_sdk_dir}"
-				CC="${!x_cc}"
-				CXX="${!x_cxx}"
-				CPP="${!x_cpp}"
-				LD="${!x_ld}"
-				AR="${!x_ar}"
-				RANLIB="${!x_ranlib}"
-				CFLAGS="${!x_cflags}"
-				LDFLAGS="${!x_ldflags}"
-				PREFIX="${!x_prefix}"
-				PLATFORM="${!x_platform}"
-				TARGET=$platform
+				local CFLAGS="-pipe -miphoneos-version-min=$SDKVER --sysroot='$SYSROOT' -isystem $PREFIX/include -isystem $SYSROOT/usr/include -isystem $PLATFORM/usr/include -isystem $SYSROOT/usr/include/c++/$GCC_VERSION -L$PREFIX/lib -L$SYSROOT/usr/lib"
 
-				ios_msg "${text_green}Building [${text_reset}${IOS_PACKAGE_WITH_VERSION}${text_green}] for [${text_reset}${platform}${text_green}]" && \
+				local ARCH HOST
+				case $SDK in
+				iphoneos)
+					ARCH=armv7
+					HOST=arm-apple-darwin
+					;;
+				iphonesimulator)
+					ARCH=i686
+					HOST=i686-apple-darwin
+					;;
+				esac
+				CFLAGS="-arch $ARCH $CFLAGS -isystem $SYSROOT/usr/lib/gcc/${HOST}10/$GCC_VERSION/include -isystem $SYSROOT/usr/include/c++/$GCC_VERSION/${ARCH}-apple-darwin10 -L$PLATFORM/Developer/usr/lib/gcc/${HOST}10/$GCC_VERSION"
+
+				CFLAGS="-fstrict-aliasing -ftree-loop-ivcanon -fgcse-sm -fgcse-las -funsafe-loop-optimizations -fsee -fomit-frame-pointer -O3 -ffast-math -ftree-vectorize $CFLAGS"
+				case $SDK in
+				iphoneos)        CFLAGS="-mthumb -mcpu=cortex-a8 -mfloat-abi=softfp -mfpu=neon $CFLAGS";;
+				iphonesimulator) CFLAGS="-msse2 -mfpmath=sse $CFLAGS";;
+				esac
+				local CPPFLAGS="$CFLAGS"
+				local CXXFLAGS="$CFLAGS"
+				local LDFLAGS="$CFLAGS"
+				local CPP="$PLATFORM/Developer/usr/bin/gcc -E"
+				local CXXCPP="$PLATFORM/Developer/usr/bin/g++ -E"
+				local CC="$PLATFORM/Developer/usr/bin/gcc"
+				local CXX="$PLATFORM/Developer/usr/bin/g++"
+				local LD="$PLATFORM/Developer/usr/bin/ld"
+				local STRIP="$PLATFORM/Developer/usr/bin/strip"
+				local XCONF="./configure --prefix=${PREFIX} --host=$HOST --target=$HOST --disable-shared --enable-static"
+
+				export ARCH HOST SDK PLATFORM SYSROOT SDKVER PATH PREFIX PKG_CONFIG_PATH PKG_CONFIG_LIBDIR \
+				       AS ASCPP AR RANLIB CFLAGS CPPFLAGS CXXFLAGS LDFLAGS CPP CXXCPP CC CXX LD STRIP XCONF
+
+				ios_msg "${text_green}Building [${text_reset}${IOS_PACKAGE_WITH_VERSION}${text_green}] for [${text_reset}${SDK} ${SDKVER}${text_green}]" && \
 				cd "${IOS_BUILD_DIR}" && \
 				custom_build || \
-				ios_exit_with_msg "Failed to build ${text_bold}${IOS_PACKAGE_WITH_VERSION}${text_reset} for ${text_bold}${platform}"
+				ios_exit_with_msg "Failed to build ${text_bold}${IOS_PACKAGE_WITH_VERSION}${text_reset} for ${text_bold}${SDK} ${SDKVER}"
 
 			done || ios_exit_with_msg "Failed to build some packages"
 		fi

@@ -1,6 +1,6 @@
 diff -rupN boost_1_45_0.orig/tools/build/v2/tools/builtin.jam boost_1_45_0/tools/build/v2/tools/builtin.jam
 --- boost_1_45_0.orig/tools/build/v2/tools/builtin.jam	2010-04-20 21:05:14.000000000 +0900
-+++ boost_1_45_0/tools/build/v2/tools/builtin.jam	2010-12-07 21:30:14.000000000 +0900
++++ boost_1_45_0/tools/build/v2/tools/builtin.jam	2011-01-06 16:41:47.000000000 +0900
 @@ -297,7 +297,7 @@ feature.feature instruction-set :
      700 7100 7100lc 7200 7300 8000
  
@@ -12,7 +12,7 @@ diff -rupN boost_1_45_0.orig/tools/build/v2/tools/builtin.jam boost_1_45_0/tools
  
 diff -rupN boost_1_45_0.orig/tools/build/v2/tools/builtin.py boost_1_45_0/tools/build/v2/tools/builtin.py
 --- boost_1_45_0.orig/tools/build/v2/tools/builtin.py	2009-10-28 16:47:51.000000000 +0900
-+++ boost_1_45_0/tools/build/v2/tools/builtin.py	2010-12-07 21:30:38.000000000 +0900
++++ boost_1_45_0/tools/build/v2/tools/builtin.py	2011-01-06 16:42:19.000000000 +0900
 @@ -291,7 +291,7 @@ def register_globals ():
          
          # Advanced RISC Machines
@@ -24,13 +24,66 @@ diff -rupN boost_1_45_0.orig/tools/build/v2/tools/builtin.py boost_1_45_0/tools/
      
 diff -rupN boost_1_45_0.orig/tools/build/v2/tools/darwin.jam boost_1_45_0/tools/build/v2/tools/darwin.jam
 --- boost_1_45_0.orig/tools/build/v2/tools/darwin.jam	2010-07-12 16:37:43.000000000 +0900
-+++ boost_1_45_0/tools/build/v2/tools/darwin.jam	2010-12-07 21:31:40.000000000 +0900
-@@ -423,7 +423,7 @@ rule setup-address-model ( targets * : s
-         
-         case arm :
-         {
--            options = -arch armv6 ;
-+            options = -arch armv7 -mthumb -mcpu=cortex-a8 -mfloat-abi=softfp -mfpu=neon ;
-         }        
++++ boost_1_45_0/tools/build/v2/tools/darwin.jam	2011-01-06 16:41:05.000000000 +0900
+@@ -371,61 +371,6 @@ rule setup-address-model ( targets * : s
+             support-ppc64 = ;
+         }
      }
+-    switch $(arch)
+-    {
+-        case combined : 
+-        {
+-            if $(address-model) = 32_64 {
+-                if $(support-ppc64) {
+-                    options = -arch i386 -arch ppc -arch x86_64 -arch ppc64 ;                    
+-                } else {
+-                    # Build 3-way binary
+-                    options = -arch i386 -arch ppc -arch x86_64 ;
+-                }                                
+-            } else if $(address-model) = 64 {
+-                if $(support-ppc64) {
+-                    options = -arch x86_64 -arch ppc64 ;
+-                } else {
+-                    errors.user-error "64-bit PPC compilation is not supported when targeting OSX 10.6 or later" ;
+-                }                
+-            } else {
+-                options = -arch i386 -arch ppc ;
+-            }
+-        }
+-        
+-        case x86 : 
+-        {
+-            if $(address-model) = 32_64 {
+-                options = -arch i386 -arch x86_64 ;
+-            } else if $(address-model) = 64 {
+-                options = -arch x86_64 ;
+-            } else {
+-                options = -arch i386 ;
+-            }
+-        }        
+-        
+-        case power :
+-        {
+-            if ! $(support-ppc64) 
+-              && (  $(address-model) = 32_64 || $(address-model) = 64 )
+-            {
+-                errors.user-error "64-bit PPC compilation is not supported when targeting OSX 10.6 or later" ;
+-            }
+-            
+-            if $(address-model) = 32_64 {
+-                options = -arch ppc -arch ppc64 ;
+-            } else if $(address-model) = 64 {
+-                options = -arch ppc64 ;
+-            } else {
+-                options = -arch ppc ;
+-            }
+-        }
+-        
+-        case arm :
+-        {
+-            options = -arch armv6 ;
+-        }        
+-    }
      
+     if $(options)
+     {

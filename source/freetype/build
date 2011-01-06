@@ -6,25 +6,15 @@ ARCHIVE_FILENAME="freetype-${VERSION}.tar.bz2"
 DOWNLOAD_URL="http://sourceforge.net/projects/freetype/files/freetype2/${VERSION}/${ARCHIVE_FILENAME}/download"
 
 function custom_build() {
-	if [ "$TARGET" == "device" ]
-	then
-		local x_flags="--host=arm-apple-darwin"
-	fi
-	CXX="$CXX" LD="$LD" CC="$CC" CPP="$CPP" AR="$AR" \
-	./configure \
-		--prefix="$PREFIX" \
-		--disable-shared \
+	$XCONF \
 		--without-quickdraw-toolbox \
 		--without-quickdraw-carbon \
 		--without-ats \
 		--without-old-mac-fonts \
 		--without-fsspec \
 		--without-fsref \
-		$x_flags \
 		CFLAGS="$CFLAGS -DDARWIN_NO_CARBON -DFT2_BUILD_LIBRARY" \
 		CXXFLAGS="$CFLAGS" \
-		LDFLAGS="$LDFLAGS" \
-		RANLIB="$RANLIB" \
 	&& make -j $MAXJOBS \
 	&& for LIB in objs/.libs/*.a
 	do

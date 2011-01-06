@@ -16,7 +16,7 @@ function custom_build() {
 	ios_msg "${text_bold}Compiling source code…" && \
 	find ../src/{LinearMath,BulletCollision,BulletDynamics} -iname "*.cpp" -print0 | \
 		xargs -0 -t -P $MAXJOBS -I % \
-		"${CXX}" -c ${CFLAGS} -DNDEBUG -I../src % && \
+		"${CXX}" -c ${CXXFLAGS} -DNDEBUG -I../src % && \
 	ios_msg "${text_bold}Creating static library…" && \
 	"${AR}" -rv "${PREFIX}/lib/libbullet.a" *.o && \
 	ios_sign_library "${PREFIX}/lib/libbullet.a" && \

@@ -10,11 +10,7 @@ function custom_build() {
 	make libbz2.a \
 		-j $MAXJOBS \
 		PREFIX="${PREFIX}" \
-		CC="${CC}" \
-		AR="${AR}" \
-		RANLIB="${RANLIB}" \
-		CFLAGS="${CFLAGS} -D_FILE_OFFSET_BITS=64" \
-		LDFLAGS="${LDFLAGS}" && \
+		CFLAGS="${CFLAGS} -D_FILE_OFFSET_BITS=64" && \
 	ios_sign_library "${IOS_BUILD_DIR}/libbz2.a" && \
 	mv "${IOS_BUILD_DIR}/libbz2.a" "${PREFIX}/lib/" && \
 	make clean && \

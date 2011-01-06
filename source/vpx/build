@@ -6,13 +6,13 @@ ARCHIVE_FILENAME="libvpx-v${VERSION}.tar.bz2"
 DOWNLOAD_URL="http://webm.googlecode.com/files/${ARCHIVE_FILENAME}"
 
 function custom_build() {
-	if [ "$TARGET" == "simulator" ]
+	if [ "$SDK" == "iphonesimulator" ]
 	then
 		echo "VPX can't be built for the simulator at this point."
 		return 0
 	fi
 
-	local SDK_VERSION="$IOS_SDK" \
+	local SDK_VERSION="$SDKVER" \
 	&& export SDK_VERSION \
 	&& ./configure \
 		--target=armv7-darwin-gcc \
