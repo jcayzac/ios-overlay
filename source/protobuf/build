@@ -1,0 +1,26 @@
+#!/bin/bash
+
+VERSION="2.3.0"
+URL="http://code.google.com/p/protobuf/"
+ARCHIVE_FILENAME="protobuf-${VERSION}.tar.bz2"
+DOWNLOAD_URL="http://protobuf.googlecode.com/files/${ARCHIVE_FILENAME}"
+
+function custom_uncompress() {
+	tar -xvpjC "${IOS_BUILD_DIR}" --strip-components 1 -f "${IOS_DOWNLOAD_LOCATION}" && \
+	bzcat "${IOS_PACKAGE_DIR}/protoc.bz2" >"${IOS_BUILD_DIR}/protoc" && \
+	chmod +x "${IOS_BUILD_DIR}/protoc"
+}
+
+function custom_build() {
+	$XCONF --with-protoc="${IOS_BUILD_DIR}/protoc" \
+	&& make -j $MAXJOBS \
+	&& for LIB in src/.libs/*.a
+	do
+		ios_sign_library "$LIB"
+	done \
+	&& make -j $MAXJOBS install \
+	&& make -j $MAXJOBS distclean
+}
+
+. "$(dirname "$0")/../../scripts/builder"
+
