@@ -1,0 +1,20 @@
+#!/bin/bash
+
+VERSION="0.5.4"
+URL="http://msgpack.org/"
+ARCHIVE_FILENAME="msgpack-${VERSION}.tar.gz"
+DOWNLOAD_URL="http://sourceforge.net/projects/msgpack/files/msgpack/cpp/${ARCHIVE_FILENAME}/download"
+
+function custom_build() {
+	$XCONF \
+	&& make -j $MAXJOBS \
+	&& for LIB in src/.libs/*.a
+	do
+		ios_sign_library "$LIB"
+	done \
+	&& make -j $MAXJOBS install \
+	&& make -j $MAXJOBS distclean
+}
+
+. "$(dirname "$0")/../../scripts/builder"
+
