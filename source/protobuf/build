@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 VERSION="2.3.0"
 URL="http://code.google.com/p/protobuf/"

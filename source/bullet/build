@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 VERSION="2.77"
 URL="http://www.bulletphysics.com/"

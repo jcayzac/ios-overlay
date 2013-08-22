@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function ios_create_master_link() {
 	sudo rm -rf "/iOS_SDK_Overlay" 2>/dev/null

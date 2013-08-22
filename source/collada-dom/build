@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 VERSION="2.2"
 URL="http://sourceforge.net/projects/collada-dom/"

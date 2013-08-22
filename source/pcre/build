@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 VERSION="8.10"
 URL="http://www.pcre.org/"

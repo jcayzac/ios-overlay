@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 VERSION="3.05B"
 URL="http://sourceforge.net/projects/colladamaya/files/COLLADAMaya%201.4.1%20plug-ins/${VERSION}/"

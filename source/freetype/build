@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 VERSION="2.4.4"
 URL="http://www.freetype.org/"
